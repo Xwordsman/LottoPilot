@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any, Iterable, Literal
 
-from app.core.constants import LOTTERY_RULES
+from app.core.constants import LOTTERY_RULES, LotteryRule
 
 LotteryType = Literal["ssq", "dlt"]
 
@@ -20,7 +20,7 @@ class DrawView:
     secondary_numbers: list[int]
 
 
-def _rules(lottery_type: LotteryType) -> dict[str, Any]:
+def _rules(lottery_type: LotteryType) -> LotteryRule:
     return LOTTERY_RULES[lottery_type]
 
 
