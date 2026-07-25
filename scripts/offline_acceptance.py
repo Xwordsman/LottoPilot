@@ -402,8 +402,17 @@ def main() -> int:
 
     # v0.7: seed UI, backtest cancel, loading/error states
     rec_v7 = (ROOT / "frontend" / "src" / "features" / "recommendations" / "RecommendationsPage.tsx").read_text(encoding="utf-8")
+    run_panel_v7 = (
+        ROOT / "frontend" / "src" / "components" / "recommendations" / "run-panel.tsx"
+    ).read_text(encoding="utf-8")
     check("frontend_rec_seed_input", "setSeed" in rec_v7 and "target_issue" in rec_v7)
-    check("frontend_rec_evaluation_field", "evaluation" in rec_v7 and "evaluation_status" not in rec_v7)
+    # evaluation UI lives on collapsible RunPanel after recommendations page refactor
+    check(
+        "frontend_rec_evaluation_field",
+        ("evaluation" in rec_v7 or "evaluation" in run_panel_v7)
+        and "evaluation_status" not in rec_v7
+        and "evaluation_status" not in run_panel_v7,
+    )
     check("frontend_rec_loading_error", "LoadingState" in rec_v7 and "ErrorState" in rec_v7)
     dash_v7 = (ROOT / "frontend" / "src" / "features" / "auth" / "DashboardPage.tsx").read_text(encoding="utf-8")
     check("frontend_dashboard_seed", "setSeed" in dash_v7 and "seed" in dash_v7)
