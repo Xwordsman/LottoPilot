@@ -7,7 +7,6 @@ from uuid import UUID
 import math
 
 from fastapi import APIRouter, Query
-from pydantic import BaseModel, Field
 from sqlalchemy import func, select, update
 
 from app.api.deps import CurrentUserDep, DbSession, RequestIdDep, SettingsDep

@@ -13,7 +13,6 @@ from sqlalchemy.orm import Session
 from app.core.errors import ValidationAppError
 from app.models.backtest import BacktestIssueResult, BacktestRun
 from app.models.draw import Draw
-from app.models.system import Job
 from app.services.backtest_core import train_slice_before_target, validate_backtest_window
 from app.services.jobs import create_job, mark_job_failed, mark_job_running, mark_job_succeeded
 from app.services.recommendation.candidates import generate_candidates

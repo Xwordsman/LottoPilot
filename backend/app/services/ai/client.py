@@ -12,7 +12,6 @@ import httpx
 
 from app.core.errors import AppError
 from app.core.security import decrypt_secret, encrypt_secret, mask_secret
-from app.services.ai.rerank import apply_ai_rerank
 
 __all__ = [
     "ModelInfo",

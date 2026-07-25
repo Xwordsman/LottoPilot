@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID
 import time
 
@@ -14,7 +13,6 @@ from app.core.errors import AppError, ValidationAppError
 from app.models.draw import Draw
 from app.models.recommendation import RecommendationRun, RecommendationTicket
 from app.models.strategy import StrategyProfile
-from app.models.system import Job
 from app.services.ai.rerank_pipeline import maybe_apply_ai
 from app.services.jobs import create_job, mark_job_failed, mark_job_running, mark_job_succeeded
 from app.services.recommendation.candidates import generate_candidates

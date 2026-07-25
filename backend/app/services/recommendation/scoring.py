@@ -6,7 +6,6 @@ from typing import Any
 
 from app.services.recommendation.features import (
     combination_structure_features,
-    historical_structure_baselines,
     normalize_missing_score,
 )
 

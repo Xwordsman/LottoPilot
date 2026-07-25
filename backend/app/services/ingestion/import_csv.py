@@ -12,7 +12,6 @@ from app.services.ingestion.parser import normalize_draw_record
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
-
 _NUM_SPLIT = re.compile(r"[\s,|+/，]+")
 
 
@@ -99,7 +98,7 @@ def preview_import_rows(raw_rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def commit_import_rows(db: "Session", raw_rows: list[dict[str, Any]]) -> dict[str, int]:
+def commit_import_rows(db: Session, raw_rows: list[dict[str, Any]]) -> dict[str, int]:
     # Lazy imports keep pure preview/path offline without ORM stack.
     from app.services.ingestion.sync import upsert_draw
     from app.services.recommendation.evaluate import evaluate_recent_upserts
