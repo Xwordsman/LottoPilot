@@ -21,7 +21,7 @@ services:
       - lottopilot
 
   app:
-    image: ${LOTTOPILOT_IMAGE:-ghcr.io/OWNER/lottopilot:v1.0.0}
+    image: ${LOTTOPILOT_IMAGE:-ghcr.io/xwordsman/lottopilot:latest}
     container_name: LottoPilot
     restart: unless-stopped
     depends_on:
