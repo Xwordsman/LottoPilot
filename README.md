@@ -66,7 +66,8 @@ docker compose -f docker-compose.prod.yml up -d
 
 首次打开完成 **Setup Wizard** 创建管理员，再导入/同步开奖数据。
 
-宝塔反代、备份与升级说明：[`deploy/baota/README.md`](deploy/baota/README.md)
+服务器速查：[`deploy/SERVER_QUICKSTART.md`](deploy/SERVER_QUICKSTART.md)  
+宝塔反代、备份与升级：[`deploy/baota/README.md`](deploy/baota/README.md)
 
 ### 3) 源码构建启动（可选，开发机/调试）
 
