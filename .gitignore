@@ -89,3 +89,7 @@ scripts/start_ui_accept_server.py
 .pip-cache/
 .uv-cache/
 .pip-wheels/
+
+# Local tools
+.tools/
+_fix_*.py
