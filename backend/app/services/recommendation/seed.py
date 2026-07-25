@@ -6,15 +6,29 @@ from typing import Sequence
 import hashlib
 import random
 
+# PostgreSQL BIGINT is signed int64.
+_INT64_MAX = (1 << 63) - 1
+_INT64_MIN = -(1 << 63)
+
+
+def normalize_seed(seed: int) -> int:
+    """Clamp/mask any seed into signed int64 so DB BigInteger inserts never overflow."""
+    value = int(seed)
+    if _INT64_MIN <= value <= _INT64_MAX:
+        return value
+    # Keep determinism while fitting signed BIGINT.
+    return value & _INT64_MAX
+
 
 def derive_seed(lottery_type: str, target_issue: str, strategy_version: str) -> int:
     material = f"{lottery_type}:{target_issue}:{strategy_version}".encode("utf-8")
     digest = hashlib.sha256(material).digest()
-    return int.from_bytes(digest[:8], "big", signed=False)
+    # Use 63-bit positive space to stay inside PostgreSQL BIGINT.
+    return int.from_bytes(digest[:8], "big", signed=False) & _INT64_MAX
 
 
 def make_rng(seed: int) -> random.Random:
-    return random.Random(seed)
+    return random.Random(normalize_seed(seed))
 
 
 def snapshot_hash(records: Sequence[tuple[str, str, tuple[int, ...], tuple[int, ...]]]) -> str:

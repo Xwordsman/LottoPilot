@@ -19,7 +19,7 @@ from app.services.recommendation.candidates import generate_candidates
 from app.services.recommendation.engine import ensure_default_strategy
 from app.services.recommendation.features import HistoryDraw, historical_structure_baselines, number_stats
 from app.services.recommendation.scoring import score_candidate, select_diverse
-from app.services.recommendation.seed import derive_seed, make_rng
+from app.services.recommendation.seed import derive_seed, make_rng, normalize_seed
 from app.services.recommendation.strategy import merge_strategy_config
 from app.utils.time import utcnow
 
@@ -67,7 +67,7 @@ def run_backtest(
     profile = ensure_default_strategy(db, lottery_type)
     config = merge_strategy_config(profile.config if isinstance(profile.config, dict) else None)
     config["candidate_count"] = candidate_count
-    used_seed = seed if seed is not None else derive_seed(lottery_type, f"{start_issue}-{end_issue}", profile.version)
+    used_seed = normalize_seed(seed if seed is not None else derive_seed(lottery_type, f"{start_issue}-{end_issue}", profile.version))
 
     job = create_job(
         db,

@@ -22,7 +22,7 @@ from app.services.recommendation.features import (
     number_stats,
 )
 from app.services.recommendation.scoring import score_candidate, select_diverse
-from app.services.recommendation.seed import derive_seed, make_rng, snapshot_hash
+from app.services.recommendation.seed import derive_seed, make_rng, normalize_seed, snapshot_hash
 from app.services.recommendation.strategy import merge_strategy_config
 from app.utils.lottery import next_issue_guess
 from app.utils.time import utcnow
@@ -105,7 +105,7 @@ def run_recommendation(
 
     latest_issue = history[0].issue
     target = target_issue or next_issue_guess(latest_issue)
-    used_seed = seed if seed is not None else derive_seed(lottery_type, target, profile.version)
+    used_seed = normalize_seed(seed if seed is not None else derive_seed(lottery_type, target, profile.version))
     rng = make_rng(used_seed)
 
     snap = snapshot_hash(
