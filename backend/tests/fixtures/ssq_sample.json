@@ -1,0 +1,32 @@
+{
+  "state": 0,
+  "message": "查询成功",
+  "result": [
+    {
+      "name": "双色球",
+      "code": "2026072",
+      "date": "2026-07-21(二)",
+      "red": "03,08,12,18,25,31",
+      "blue": "09",
+      "sales": "350000000",
+      "poolmoney": "1200000000",
+      "content": "",
+      "prizegrades": [
+        {"type": 1, "typenum": "5", "typemoney": "5000000"}
+      ],
+      "detailsLink": "https://www.cwl.gov.cn/example/ssq/2026072"
+    },
+    {
+      "name": "双色球",
+      "code": "2026071",
+      "date": "2026-07-19(日)",
+      "red": "01,05,11,17,22,30",
+      "blue": "02",
+      "sales": "340000000",
+      "poolmoney": "1180000000",
+      "content": "",
+      "prizegrades": [],
+      "detailsLink": "https://www.cwl.gov.cn/example/ssq/2026071"
+    }
+  ]
+}

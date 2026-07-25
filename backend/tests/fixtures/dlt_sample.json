@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "value": {
+    "list": [
+      {
+        "lotteryDrawNum": "26072",
+        "lotteryDrawTime": "2026-07-20",
+        "lotteryDrawResult": "02 08 15 21 33 05 11",
+        "totalSaleAmount": "280000000",
+        "poolBalanceAfterdraw": "900000000",
+        "prizeLevelList": [
+          {"prizeLevel": "一等奖", "stakeCount": "3", "stakeAmount": "10000000"}
+        ],
+        "drawPdfUrl": "https://www.sporttery.cn/example/dlt/26072.pdf"
+      },
+      {
+        "lotteryDrawNum": "26071",
+        "lotteryDrawTime": "2026-07-18",
+        "lotteryDrawResult": "01 07 12 20 35 03 09",
+        "totalSaleAmount": "275000000",
+        "poolBalanceAfterdraw": "880000000",
+        "prizeLevelList": [],
+        "drawPdfUrl": "https://www.sporttery.cn/example/dlt/26071.pdf"
+      }
+    ]
+  }
+}
