@@ -239,3 +239,15 @@ On each generate click, LottoPilot automatically walk-forward evaluates a small 
 - Goal: maximize historical hit/prize proxy for the selected 5 tickets
 - User action: only click generate
 - This is not a claim of higher true winning odds
+
+
+## Official auto-optimal objective
+
+Default generate path uses automatic optimization with objective `historical_prize_then_hits`:
+
+1. maximize prize-mapped tickets on walk-forward history
+2. then best primary hits
+3. then total primary hits
+4. then secondary hits
+
+Coarse grid search + local refinement selects the config. True lottery odds are unchanged.

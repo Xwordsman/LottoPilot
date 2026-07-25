@@ -1,9 +1,17 @@
-"""Automatic historical-hit oriented strategy selection.
+"""Official automatic optimizer for recommendation configs.
 
-This module does NOT claim to change true lottery odds. It selects, from a small
-search space, the scoring/sampling configuration that performed best on a recent
-walk-forward window (primary/secondary hits and mapped prize levels). The chosen
-config is then used for the current recommendation run automatically.
+Product rule:
+- User only clicks generate.
+- System automatically searches for the best config under a fixed historical
+  objective and uses it for the current 5 tickets.
+
+Official objective (lexicographic / heavily weighted):
+1) more prize-mapped tickets in walk-forward window
+2) higher best primary hits among the 5
+3) higher total primary hits
+4) higher total secondary hits
+
+This optimizes a historical hit/prize proxy. It does not change true lottery odds.
 """
 
 from __future__ import annotations
@@ -11,6 +19,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
+import itertools
 import time
 
 from app.services.recommendation.candidates import generate_candidates
@@ -25,6 +34,13 @@ from app.services.recommendation.seed import derive_seed, make_rng
 from app.services.recommendation.strategy import merge_strategy_config
 
 _CACHE: dict[str, dict[str, Any]] = {}
+
+# Fixed product objective. Do not ask the user to choose.
+OBJECTIVE_NAME = "historical_prize_then_hits"
+OBJECTIVE_NOTE = (
+    "Auto-optimal under historical walk-forward prize/hit proxy; "
+    "not a claim of higher true winning probability."
+)
 
 
 @dataclass(frozen=True)
@@ -45,115 +61,207 @@ def _apply_overrides(base: dict[str, Any], overrides: dict[str, Any]) -> dict[st
     return cfg
 
 
-def _variant_grid(base: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
-    specs: list[tuple[str, dict[str, Any]]] = [
+def _normalize_weights(weights: dict[str, float]) -> dict[str, float]:
+    keys = [
+        "number_score",
+        "structure_score",
+        "temporal_stability_score",
+        "cooccurrence_score",
+        "extreme_penalty",
+    ]
+    vals = [max(0.01, float(weights.get(k, 0.1))) for k in keys]
+
+    total = sum(vals) or 1.0
+    return {k: round(v / total, 6) for k, v in zip(keys, vals, strict=True)}
+
+
+def _coarse_specs() -> list[tuple[str, dict[str, Any]]]:
+    return [
         ("baseline", {}),
         (
             "number_hot",
             {
-                "weights": {
-                    "number_score": 0.55,
-                    "structure_score": 0.20,
-                    "temporal_stability_score": 0.15,
-                    "cooccurrence_score": 0.05,
-                    "extreme_penalty": 0.05,
-                },
-                "lambda_decay": 0.045,
+                "weights": _normalize_weights(
+                    {
+                        "number_score": 0.55,
+                        "structure_score": 0.20,
+                        "temporal_stability_score": 0.15,
+                        "cooccurrence_score": 0.05,
+                        "extreme_penalty": 0.05,
+                    }
+                ),
+                "lambda_decay": 0.05,
                 "sampling": {
-                    "uniform_ratio": 0.20,
-                    "weighted_ratio": 0.55,
+                    "uniform_ratio": 0.15,
+                    "weighted_ratio": 0.60,
                     "structure_ratio": 0.20,
                     "explore_ratio": 0.05,
                 },
             },
         ),
         (
+            "number_hot_mild",
+            {
+                "weights": _normalize_weights(
+                    {
+                        "number_score": 0.48,
+                        "structure_score": 0.24,
+                        "temporal_stability_score": 0.16,
+                        "cooccurrence_score": 0.06,
+                        "extreme_penalty": 0.06,
+                    }
+                ),
+                "lambda_decay": 0.035,
+            },
+        ),
+        (
             "structure_stable",
             {
-                "weights": {
-                    "number_score": 0.28,
-                    "structure_score": 0.42,
-                    "temporal_stability_score": 0.20,
-                    "cooccurrence_score": 0.05,
-                    "extreme_penalty": 0.05,
-                },
-                "lambda_decay": 0.02,
+                "weights": _normalize_weights(
+                    {
+                        "number_score": 0.26,
+                        "structure_score": 0.44,
+                        "temporal_stability_score": 0.20,
+                        "cooccurrence_score": 0.05,
+                        "extreme_penalty": 0.05,
+                    }
+                ),
+                "lambda_decay": 0.018,
                 "sampling": {
-                    "uniform_ratio": 0.25,
-                    "weighted_ratio": 0.30,
-                    "structure_ratio": 0.40,
+                    "uniform_ratio": 0.22,
+                    "weighted_ratio": 0.28,
+                    "structure_ratio": 0.45,
                     "explore_ratio": 0.05,
                 },
             },
         ),
         (
-            "mean_revert_missing",
+            "mean_revert",
             {
-                "weights": {
-                    "number_score": 0.48,
-                    "structure_score": 0.27,
-                    "temporal_stability_score": 0.10,
-                    "cooccurrence_score": 0.05,
-                    "extreme_penalty": 0.10,
-                },
-                "lambda_decay": 0.015,
+                "weights": _normalize_weights(
+                    {
+                        "number_score": 0.50,
+                        "structure_score": 0.25,
+                        "temporal_stability_score": 0.08,
+                        "cooccurrence_score": 0.07,
+                        "extreme_penalty": 0.10,
+                    }
+                ),
+                "lambda_decay": 0.012,
                 "sampling": {
-                    "uniform_ratio": 0.30,
-                    "weighted_ratio": 0.35,
+                    "uniform_ratio": 0.28,
+                    "weighted_ratio": 0.32,
+                    "structure_ratio": 0.28,
+                    "explore_ratio": 0.12,
+                },
+            },
+        ),
+        (
+            "cooccur",
+            {
+                "weights": _normalize_weights(
+                    {
+                        "number_score": 0.32,
+                        "structure_score": 0.24,
+                        "temporal_stability_score": 0.14,
+                        "cooccurrence_score": 0.24,
+                        "extreme_penalty": 0.06,
+                    }
+                ),
+                "lambda_decay": 0.028,
+            },
+        ),
+        (
+            "stable_cover",
+            {
+                "weights": _normalize_weights(
+                    {
+                        "number_score": 0.36,
+                        "structure_score": 0.30,
+                        "temporal_stability_score": 0.22,
+                        "cooccurrence_score": 0.06,
+                        "extreme_penalty": 0.06,
+                    }
+                ),
+                "diversity": {
+                    "primary_overlap_max": 2,
+                    "secondary_identical_penalty": True,
+                    "mmr_lambda": 0.48,
+                },
+                "sampling": {
+                    "uniform_ratio": 0.35,
+                    "weighted_ratio": 0.30,
                     "structure_ratio": 0.25,
                     "explore_ratio": 0.10,
                 },
             },
         ),
         (
-            "cooccur_focus",
+            "explore_mix",
             {
-                "weights": {
-                    "number_score": 0.34,
-                    "structure_score": 0.26,
-                    "temporal_stability_score": 0.15,
-                    "cooccurrence_score": 0.20,
-                    "extreme_penalty": 0.05,
-                },
+                "weights": _normalize_weights(
+                    {
+                        "number_score": 0.40,
+                        "structure_score": 0.28,
+                        "temporal_stability_score": 0.16,
+                        "cooccurrence_score": 0.08,
+                        "extreme_penalty": 0.08,
+                    }
+                ),
                 "lambda_decay": 0.03,
+                "sampling": {
+                    "uniform_ratio": 0.45,
+                    "weighted_ratio": 0.25,
+                    "structure_ratio": 0.18,
+                    "explore_ratio": 0.12,
+                },
             },
         ),
         (
-            "diverse_cover",
+            "decay_fast",
             {
-                "weights": {
-                    "number_score": 0.38,
-                    "structure_score": 0.28,
-                    "temporal_stability_score": 0.18,
-                    "cooccurrence_score": 0.08,
-                    "extreme_penalty": 0.08,
-                },
-                "diversity": {
-                    "primary_overlap_max": 2,
-                    "secondary_identical_penalty": True,
-                    "mmr_lambda": 0.45,
-                },
-                "sampling": {
-                    "uniform_ratio": 0.40,
-                    "weighted_ratio": 0.30,
-                    "structure_ratio": 0.20,
-                    "explore_ratio": 0.10,
-                },
+                "lambda_decay": 0.06,
+                "weights": _normalize_weights(
+                    {
+                        "number_score": 0.52,
+                        "structure_score": 0.22,
+                        "temporal_stability_score": 0.14,
+                        "cooccurrence_score": 0.06,
+                        "extreme_penalty": 0.06,
+                    }
+                ),
+            },
+        ),
+        (
+            "decay_slow",
+            {
+                "lambda_decay": 0.01,
+                "weights": _normalize_weights(
+                    {
+                        "number_score": 0.34,
+                        "structure_score": 0.34,
+                        "temporal_stability_score": 0.20,
+                        "cooccurrence_score": 0.06,
+                        "extreme_penalty": 0.06,
+                    }
+                ),
             },
         ),
     ]
-    return [(name, _apply_overrides(base, overrides)) for name, overrides in specs]
 
 
-def _objective_for_tickets(
+def _objective_tuple(
     *,
     lottery_type: str,
     tickets: list[dict[str, Any]],
     actual: HistoryDraw,
-) -> float:
-    score = 0.0
+) -> tuple[int, int, int, int, float]:
+    """Higher tuple is better under official product objective."""
+    prize_count = 0
     best_primary = 0
-    any_prize = 0
+    total_primary = 0
+    total_secondary = 0
+    prize_quality = 0.0
     for ticket in tickets:
         ev = evaluate_ticket_against_draw(
             lottery_type=lottery_type,
@@ -162,21 +270,31 @@ def _objective_for_tickets(
             draw_primary=list(actual.primary_numbers),
             draw_secondary=list(actual.secondary_numbers),
         )
-        primary_hits = int(ev["primary_hits"])
-        secondary_hits = int(ev["secondary_hits"])
-        best_primary = max(best_primary, primary_hits)
-        score += primary_hits * 1.0 + secondary_hits * 1.25
+        ph = int(ev["primary_hits"])
+        sh = int(ev["secondary_hits"])
+        best_primary = max(best_primary, ph)
+        total_primary += ph
+        total_secondary += sh
         level = ev.get("prize_level")
         if level is not None:
-            any_prize += 1
+            prize_count += 1
             try:
                 lvl = int(str(level))
-                score += max(0.0, 18.0 - lvl * 1.5)
+                prize_quality += max(0.0, 20.0 - lvl)
             except ValueError:
-                score += 6.0
-    score += best_primary * 0.75
-    score += any_prize * 4.0
-    return score
+                prize_quality += 5.0
+    return (prize_count, best_primary, total_primary, total_secondary, round(prize_quality, 4))
+
+
+def _tuple_to_score(t: tuple[int, int, int, int, float]) -> float:
+    prize_count, best_primary, total_primary, total_secondary, prize_quality = t
+    return (
+        prize_count * 100000.0
+        + best_primary * 1000.0
+        + total_primary * 100.0
+        + total_secondary * 40.0
+        + prize_quality
+    )
 
 
 def _run_one_issue(
@@ -186,9 +304,9 @@ def _run_one_issue(
     actual: HistoryDraw,
     config: dict[str, Any],
     seed: int,
-) -> float:
+) -> tuple[int, int, int, int, float]:
     if len(train_newest_first) < 5:
-        return 0.0
+        return (0, 0, 0, 0, 0.0)
     rng = make_rng(seed)
     primary_stats = number_stats(
         train_newest_first,
@@ -207,7 +325,7 @@ def _run_one_issue(
     baselines = historical_structure_baselines(train_newest_first)
     local_cfg = deepcopy(config)
     local_cfg["candidate_count"] = int(
-        local_cfg.get("_search_candidate_count") or local_cfg.get("candidate_count") or 800
+        local_cfg.get("_search_candidate_count") or local_cfg.get("candidate_count") or 600
     )
     local_cfg["final_count"] = int(local_cfg.get("final_count") or 5)
     candidates = generate_candidates(
@@ -237,8 +355,115 @@ def _run_one_issue(
         config=local_cfg,
     )
     if not selected:
-        return 0.0
-    return _objective_for_tickets(lottery_type=lottery_type, tickets=selected, actual=actual)
+        return (0, 0, 0, 0, 0.0)
+    return _objective_tuple(lottery_type=lottery_type, tickets=selected, actual=actual)
+
+
+def _sum_tuples(
+    values: list[tuple[int, int, int, int, float]],
+) -> tuple[int, int, int, int, float]:
+    if not values:
+        return (0, 0, 0, 0, 0.0)
+    return (
+        sum(v[0] for v in values),
+        sum(v[1] for v in values),
+        sum(v[2] for v in values),
+        sum(v[3] for v in values),
+        round(sum(v[4] for v in values), 4),
+    )
+
+
+def _evaluate_config(
+    *,
+    name: str,
+    cfg: dict[str, Any],
+    lottery_type: str,
+    chrono: list[HistoryDraw],
+    start_idx: int,
+    end_idx: int,
+    seed: int,
+    search_candidate_count: int,
+) -> dict[str, Any]:
+    cfg = deepcopy(cfg)
+    cfg["_search_candidate_count"] = search_candidate_count
+    parts: list[tuple[int, int, int, int, float]] = []
+    for idx in range(start_idx, end_idx + 1):
+        actual = chrono[idx]
+        train = list(reversed(chrono[:idx]))
+        local_seed = derive_seed(lottery_type, actual.issue, f"auto-opt:{name}:{seed}")
+        parts.append(
+            _run_one_issue(
+                lottery_type=lottery_type,
+                train_newest_first=train,
+                actual=actual,
+                config=cfg,
+                seed=local_seed,
+            )
+        )
+    total = _sum_tuples(parts)
+    n_eval = max(1, len(parts))
+    avg_score = _tuple_to_score(total) / n_eval
+    return {
+        "name": name,
+        "score": round(avg_score, 6),
+        "issues_evaluated": n_eval,
+        "totals": {
+            "prize_count": total[0],
+            "best_primary_sum": total[1],
+            "primary_hits": total[2],
+            "secondary_hits": total[3],
+            "prize_quality": total[4],
+        },
+        "config": cfg,
+    }
+
+
+def _local_refine_specs(best_cfg: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
+    """Local search around current best weights/lambda/diversity."""
+    base_w = dict(best_cfg.get("weights") or {})
+    base_lambda = float(best_cfg.get("lambda_decay") or 0.03)
+    specs: list[tuple[str, dict[str, Any]]] = []
+    deltas = [-0.06, -0.03, 0.03, 0.06]
+    for key, delta in itertools.product(
+        ["number_score", "structure_score", "temporal_stability_score", "cooccurrence_score"],
+        deltas,
+    ):
+        weights = dict(base_w)
+        weights[key] = float(weights.get(key, 0.2)) + delta
+        specs.append(
+            (
+                f"refine_{key}_{delta:+.2f}",
+                {
+                    "weights": _normalize_weights(weights),
+                    "lambda_decay": base_lambda,
+                },
+            )
+        )
+    for lam in [base_lambda * 0.7, base_lambda * 1.3, base_lambda * 1.6]:
+        specs.append(
+            (
+                f"refine_lambda_{lam:.4f}",
+                {
+                    "weights": _normalize_weights(base_w),
+                    "lambda_decay": max(0.005, min(0.08, lam)),
+                },
+            )
+        )
+    specs.append(
+        (
+            "refine_diversity_tight",
+            {
+                "weights": _normalize_weights(base_w),
+                "lambda_decay": base_lambda,
+                "diversity": {
+                    "primary_overlap_max": 2,
+                    "secondary_identical_penalty": True,
+                    "mmr_lambda": 0.5,
+                },
+            },
+        )
+    )
+    return specs
 
 
 def search_best_hit_config(
@@ -247,72 +472,103 @@ def search_best_hit_config(
     history_newest_first: list[HistoryDraw],
     base_config: dict[str, Any] | None = None,
     seed: int,
-    window: int = 12,
-    search_candidate_count: int = 500,
+    window: int | None = None,
+    search_candidate_count: int = 450,
+    refine_top_k: int = 1,
+    max_refine: int = 8,
 ) -> AutoHitResult:
     started = time.perf_counter()
     base = merge_strategy_config(base_config)
-    if len(history_newest_first) < 12:
+    history_count = len(history_newest_first)
+    if history_count < 12:
         meta = {
-            "mode": "auto_hit",
+            "mode": "auto_optimal",
             "status": "skipped_insufficient_history",
+            "objective": OBJECTIVE_NAME,
             "reason": "need_at_least_12_draws",
-            "history_count": len(history_newest_first),
+            "history_count": history_count,
             "elapsed_ms": int((time.perf_counter() - started) * 1000),
-            "note": "Optimized on historical walk-forward hit/prize proxy; not a promise of future winning odds.",
+            "note": OBJECTIVE_NOTE,
         }
         return AutoHitResult(config=base, meta=meta)
 
+    # Adaptive window: more history => longer evaluation, capped for latency.
+    if window is None:
+        window = max(12, min(20, history_count // 3))
     chrono = list(reversed(history_newest_first))
     end_idx = len(chrono) - 1
     start_idx = max(5, end_idx - window + 1)
-    variants = _variant_grid(base)
 
     leaderboard: list[dict[str, Any]] = []
-    best_name = "baseline"
-    best_cfg = variants[0][1]
-    best_score = float("-inf")
+    for name, overrides in _coarse_specs():
+        cfg = _apply_overrides(base, overrides)
+        row = _evaluate_config(
+            name=name,
+            cfg=cfg,
+            lottery_type=lottery_type,
+            chrono=chrono,
+            start_idx=start_idx,
+            end_idx=end_idx,
+            seed=seed,
+            search_candidate_count=search_candidate_count,
+        )
+        leaderboard.append(row)
 
-    for name, cfg in variants:
-        cfg = deepcopy(cfg)
-        cfg["_search_candidate_count"] = search_candidate_count
-        total = 0.0
-        n_eval = 0
-        for idx in range(start_idx, end_idx + 1):
-            actual = chrono[idx]
-            train = list(reversed(chrono[:idx]))
-            local_seed = derive_seed(lottery_type, actual.issue, f"auto-hit:{name}:{seed}")
-            total += _run_one_issue(
-                lottery_type=lottery_type,
-                train_newest_first=train,
-                actual=actual,
-                config=cfg,
-                seed=local_seed,
+    leaderboard.sort(key=lambda row: row["score"], reverse=True)
+
+    # Local refinement around top configs.
+    refined: list[dict[str, Any]] = []
+    for top in leaderboard[: max(1, refine_top_k)]:
+        for name, overrides in _local_refine_specs(top["config"])[: max_refine]:
+            cfg = _apply_overrides(top["config"], overrides)
+            refined.append(
+                _evaluate_config(
+                    name=f"{top['name']}::{name}",
+                    cfg=cfg,
+                    lottery_type=lottery_type,
+                    chrono=chrono,
+                    start_idx=start_idx,
+                    end_idx=end_idx,
+                    seed=seed,
+                    search_candidate_count=max(400, search_candidate_count - 100),
+                )
             )
-            n_eval += 1
-        avg = total / max(1, n_eval)
-        leaderboard.append({"name": name, "score": round(avg, 6), "issues_evaluated": n_eval})
-        if avg > best_score:
-            best_score = avg
-            best_name = name
-            best_cfg = cfg
+    if refined:
+        leaderboard.extend(refined)
+        leaderboard.sort(key=lambda row: row["score"], reverse=True)
 
-    best_cfg = deepcopy(best_cfg)
+    best = leaderboard[0]
+    best_cfg = deepcopy(best["config"])
     best_cfg.pop("_search_candidate_count", None)
-    if int(best_cfg.get("candidate_count") or 0) < 5000:
-        best_cfg["candidate_count"] = max(int(base.get("candidate_count") or 5000), 5000)
+    # Final generate uses a large candidate pool.
+    best_cfg["candidate_count"] = max(int(base.get("candidate_count") or 8000), 8000)
+    best_cfg["final_count"] = 5
+    best_cfg["auto_hit_optimize"] = True
+    best_cfg["optimization_goal"] = OBJECTIVE_NAME
 
     meta = {
-        "mode": "auto_hit",
+        "mode": "auto_optimal",
         "status": "selected",
-        "selected_variant": best_name,
-        "selected_score": round(best_score, 6),
+        "objective": OBJECTIVE_NAME,
+        "selected_variant": best["name"],
+        "selected_score": best["score"],
+        "selected_totals": best.get("totals"),
         "window": window,
         "search_candidate_count": search_candidate_count,
-        "leaderboard": sorted(leaderboard, key=lambda row: row["score"], reverse=True),
+        "candidates_searched": len(leaderboard),
+        "leaderboard": [
+            {
+                "name": row["name"],
+                "score": row["score"],
+                "issues_evaluated": row["issues_evaluated"],
+                "totals": row.get("totals"),
+            }
+            for row in leaderboard[:12]
+        ],
         "cutoff_issue": history_newest_first[0].issue,
+        "history_count": history_count,
         "elapsed_ms": int((time.perf_counter() - started) * 1000),
-        "note": "Optimized on historical walk-forward hit/prize proxy; not a promise of future winning odds.",
+        "note": OBJECTIVE_NOTE,
     }
     return AutoHitResult(config=best_cfg, meta=meta)
 
@@ -327,10 +583,18 @@ def get_auto_hit_config(
 ) -> AutoHitResult:
     if not history_newest_first:
         cfg = merge_strategy_config(base_config)
-        return AutoHitResult(config=cfg, meta={"mode": "auto_hit", "status": "empty_history"})
+        return AutoHitResult(
+            config=cfg,
+            meta={
+                "mode": "auto_optimal",
+                "status": "empty_history",
+                "objective": OBJECTIVE_NAME,
+                "note": OBJECTIVE_NOTE,
+            },
+        )
 
     cutoff = history_newest_first[0].issue
-    cache_key = f"{lottery_type}:{cutoff}"
+    cache_key = f"{lottery_type}:{cutoff}:{OBJECTIVE_NAME}"
     if not force_refresh and cache_key in _CACHE:
         cached = _CACHE[cache_key]
         return AutoHitResult(

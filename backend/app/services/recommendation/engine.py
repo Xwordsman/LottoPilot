@@ -109,7 +109,7 @@ def run_recommendation(
     used_seed = normalize_seed(seed if seed is not None else derive_seed(lottery_type, target, profile.version))
     rng = make_rng(used_seed)
 
-    # Automatic historical-hit oriented config selection.
+    # Automatic official optimal config selection (historical prize/hit proxy).
     # Explicit custom strategy_profile_id still benefits from auto search on top of its base
     # weights unless profile.config disables it with auto_hit_optimize=false.
     auto_meta: dict = {"mode": "auto_hit", "status": "disabled"}
@@ -280,7 +280,7 @@ def run_recommendation(
             "ai_weight": ai_meta.get("ai_weight", 0.0),
             "ai_status": run.ai_status,
             "auto_hit": auto_meta,
-            "optimization_goal": "historical_hit_proxy_max",
+            "optimization_goal": "historical_prize_then_hits",
         }
         mark_job_succeeded(db, job)
         db.add(run)
