@@ -2,13 +2,26 @@
 
 from __future__ import annotations
 
-from typing import Final, Literal
+from typing import Final, Literal, TypedDict
 
 LotteryType = Literal["ssq", "dlt"]
 
+
+class LotteryRule(TypedDict):
+    code: str
+    name: str
+    primary_count: int
+    primary_min: int
+    primary_max: int
+    secondary_count: int
+    secondary_min: int
+    secondary_max: int
+    draw_weekdays: list[int]
+
+
 SUPPORTED_LOTTERIES: Final[tuple[LotteryType, ...]] = ("ssq", "dlt")
 
-LOTTERY_RULES: Final[dict[str, dict[str, object]]] = {
+LOTTERY_RULES: Final[dict[str, LotteryRule]] = {
     "ssq": {
         "code": "ssq",
         "name": "双色球",

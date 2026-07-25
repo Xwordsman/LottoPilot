@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 import csv
 import io
@@ -308,12 +308,12 @@ def build_run_export(
                 "explanation",
             ]
         )
-        for item in payload["tickets"]:
+        for item in cast(list[dict[str, Any]], payload["tickets"]):
             writer.writerow(
                 [
                     item["rank"],
-                    " ".join(f"{n:02d}" for n in item["primary_numbers"]),
-                    " ".join(f"{n:02d}" for n in item["secondary_numbers"]),
+                    " ".join(f"{n:02d}" for n in cast(list[int], item["primary_numbers"])),
+                    " ".join(f"{n:02d}" for n in cast(list[int], item["secondary_numbers"])),
                     item["statistical_score"],
                     item["ai_score"] if item["ai_score"] is not None else "",
                     item["final_score"],

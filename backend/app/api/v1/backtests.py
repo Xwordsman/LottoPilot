@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
 from uuid import UUID
 import csv
 import io
@@ -200,9 +201,9 @@ def export_backtest(
             "baseline_avg_primary_hits",
             "runtime_ms",
         ])
-        for item in payload["issues"]:
-            hm = item["hit_metrics"] or {}
-            bm = item["baseline_metrics"] or {}
+        for item in cast(list[dict[str, Any]], payload["issues"]):
+            hm = cast(dict[str, Any], item.get("hit_metrics") or {})
+            bm = cast(dict[str, Any], item.get("baseline_metrics") or {})
             writer.writerow([
                 item["target_draw_id"],
                 hm.get("best_primary_hits", ""),

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from typing import cast
+
+from app.core.constants import LotteryType
 from fastapi import APIRouter, Query
 from sqlalchemy import select
 
@@ -55,14 +58,14 @@ def analytics_overview(
     draws = _load_draws(db, lottery_type, window)
     history = _load_draws(db, lottery_type, None)
     data = AnalyticsOverviewData(
-        lottery_type=lottery_type,  # type: ignore[arg-type]
+        lottery_type=cast(LotteryType, lottery_type),  # type: ignore[arg-type]
         metrics=overview_metrics(draws),
-        hot_cold=hot_cold(draws, lottery_type=lottery_type, window=min(window, 30)),  # type: ignore[arg-type]
-        frequency_primary=frequency(draws, lottery_type=lottery_type, zone="primary"),  # type: ignore[arg-type]
-        missing_primary=missing_streaks(history, lottery_type=lottery_type, zone="primary"),  # type: ignore[arg-type]
+        hot_cold=hot_cold(draws, lottery_type=cast(LotteryType, lottery_type), window=min(window, 30)),  # type: ignore[arg-type]
+        frequency_primary=frequency(draws, lottery_type=cast(LotteryType, lottery_type), zone="primary"),  # type: ignore[arg-type]
+        missing_primary=missing_streaks(history, lottery_type=cast(LotteryType, lottery_type), zone="primary"),  # type: ignore[arg-type]
         sum_span=sum_span_odd_even(draws),
         zones=zone_distribution(draws, lottery_type=lottery_type),  # type: ignore[arg-type]
-        cooccurrence=cooccurrence(draws, lottery_type=lottery_type, top_k=20),  # type: ignore[arg-type]
+        cooccurrence=cooccurrence(draws, lottery_type=cast(LotteryType, lottery_type), top_k=20),  # type: ignore[arg-type]
     )
     return success_response(data.model_dump(mode="json"), request_id)
 
@@ -82,7 +85,7 @@ def analytics_frequency(
         "lottery_type": lottery_type,
         "zone": zone,
         "window": window,
-        "items": frequency(draws, lottery_type=lottery_type, zone=zone),  # type: ignore[arg-type]
+        "items": frequency(draws, lottery_type=cast(LotteryType, lottery_type), zone=zone),  # type: ignore[arg-type]
     }
     return success_response(data, request_id)
 
@@ -100,7 +103,7 @@ def analytics_missing(
     data = {
         "lottery_type": lottery_type,
         "zone": zone,
-        "items": missing_streaks(draws, lottery_type=lottery_type, zone=zone),  # type: ignore[arg-type]
+        "items": missing_streaks(draws, lottery_type=cast(LotteryType, lottery_type), zone=zone),  # type: ignore[arg-type]
     }
     return success_response(data, request_id)
 
@@ -121,7 +124,7 @@ def analytics_hot_cold(
         "lottery_type": lottery_type,
         **hot_cold(
             draws,
-            lottery_type=lottery_type,
+            lottery_type=cast(LotteryType, lottery_type),
             window=window,
             hot_n=hot_n,
             cold_n=cold_n,
@@ -181,7 +184,7 @@ def analytics_cooccurrence(
         "lottery_type": lottery_type,
         "window": window,
         "top_k": top_k,
-        "items": cooccurrence(draws, lottery_type=lottery_type, top_k=top_k),  # type: ignore[arg-type]
+        "items": cooccurrence(draws, lottery_type=cast(LotteryType, lottery_type), top_k=top_k),  # type: ignore[arg-type]
     }
     return success_response(data, request_id)
 
@@ -203,9 +206,9 @@ def analytics_numbers(
         "lottery_type": lottery_type,
         "zone": zone,
         "window": window,
-        "frequency": frequency(draws, lottery_type=lottery_type, zone=zone),  # type: ignore[arg-type]
-        "missing": missing_streaks(history, lottery_type=lottery_type, zone=zone),  # type: ignore[arg-type]
-        "hot_cold": hot_cold(draws, lottery_type=lottery_type, window=min(window or 30, 30)),  # type: ignore[arg-type]
+        "frequency": frequency(draws, lottery_type=cast(LotteryType, lottery_type), zone=zone),  # type: ignore[arg-type]
+        "missing": missing_streaks(history, lottery_type=cast(LotteryType, lottery_type), zone=zone),  # type: ignore[arg-type]
+        "hot_cold": hot_cold(draws, lottery_type=cast(LotteryType, lottery_type), window=min(window or 30, 30)),  # type: ignore[arg-type]
     }
     return success_response(data, request_id)
 

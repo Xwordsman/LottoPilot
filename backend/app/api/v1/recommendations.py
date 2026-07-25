@@ -110,13 +110,13 @@ def create_recommendation(
         candidate_count=payload.candidate_count or 5000,
         enable_ai=payload.enable_ai,
     )
-    run = db.scalar(
+    loaded = db.scalar(
         select(RecommendationRun)
         .where(RecommendationRun.id == run.id)
         .options(selectinload(RecommendationRun.tickets))
     )
-    assert run is not None
-    return success_response(_run_to_public(db, run).model_dump(mode="json"), request_id, status_code=201)
+    assert loaded is not None
+    return success_response(_run_to_public(db, loaded).model_dump(mode="json"), request_id, status_code=201)
 
 
 @router.get("")

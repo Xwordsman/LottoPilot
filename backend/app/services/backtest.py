@@ -103,7 +103,7 @@ def run_backtest(
         issue_metrics: list[dict[str, Any]] = []
         total_primary_hits = 0
         total_secondary_hits = 0
-        baseline_primary_hits = 0
+        baseline_primary_hits = 0.0
 
         for idx in range(start_idx, end_idx + 1):
             t0 = time.perf_counter()
