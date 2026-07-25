@@ -54,6 +54,7 @@ GET /health 与 /api/v1/system/ready
 ## 5. 发布判定
 
 - **代码与部署工件：已就绪，可推送 GitHub**
-- **当前阻塞：等待仓库 GitHub 地址以配置 `git remote` 并 `git push`**
+- **GitHub 推送：已完成** → https://github.com/Xwordsman/LottoPilot （`main` @ 155133a）
+- **下一步：等待 Actions 全绿 + 服务器 Compose 部署 + 人工 9.2**
 - **CI 绿 / GHCR 镜像 / 服务器 Compose 健康 / 人工 9.2：待推送后由 Actions 与服务器完成**
 - **在上述未完成前，不可宣称生产发布成功**
