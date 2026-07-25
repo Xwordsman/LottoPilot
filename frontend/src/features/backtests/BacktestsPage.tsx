@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingState } from "@/components/ui/LoadingState";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorState } from "@/components/ui/error-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest, ApiError } from "@/lib/api";
 import type { LotteryType } from "@/types/draws";
 import type { BacktestList, BacktestRun } from "@/types/recommendations";
@@ -141,11 +144,12 @@ export function BacktestsPage() {
       />
 
       <Card>
+      <CardContent className="space-y-4 px-6">
         <form className="grid gap-3 md:grid-cols-4" onSubmit={onSubmit}>
           <label className="space-y-1 text-sm">
             <span>彩种</span>
             <select
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2"
               value={lottery}
               onChange={(e) => setLottery(e.target.value as LotteryType)}
             >
@@ -156,7 +160,7 @@ export function BacktestsPage() {
           <label className="space-y-1 text-sm">
             <span>起始期号</span>
             <input
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2"
               value={startIssue}
               onChange={(e) => setStartIssue(e.target.value)}
               required
@@ -165,7 +169,7 @@ export function BacktestsPage() {
           <label className="space-y-1 text-sm">
             <span>结束期号</span>
             <input
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2"
               value={endIssue}
               onChange={(e) => setEndIssue(e.target.value)}
               required
@@ -177,12 +181,14 @@ export function BacktestsPage() {
             </Button>
           </div>
         </form>
-        {message ? <div className="mt-3 text-sm text-emerald-400">{message}</div> : null}
-        {error ? <div className="mt-3 text-sm text-rose-400">{error}</div> : null}
-      </Card>
+        {message ? <div className="mt-3 text-sm text-primary">{message}</div> : null}
+        {error ? <div className="mt-3 text-sm text-destructive">{error}</div> : null}
+      </CardContent>
+    </Card>
 
       {active ? (
         <Card>
+      <CardContent className="space-y-4 px-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-medium">最近结果</h2>
             <div className="flex flex-wrap gap-2">
@@ -204,30 +210,30 @@ export function BacktestsPage() {
             </div>
           </div>
           <div className="mt-3 grid gap-3 md:grid-cols-4">
-            <div className="rounded-xl border border-slate-800 p-3">
-              <div className="text-xs text-slate-400">覆盖期数</div>
+            <div className="rounded-xl border p-3">
+              <div className="text-xs text-muted-foreground">覆盖期数</div>
               <div className="mt-1 text-xl font-semibold">{String(summary.issues ?? "—")}</div>
             </div>
-            <div className="rounded-xl border border-slate-800 p-3">
-              <div className="text-xs text-slate-400">平均最佳主区命中</div>
+            <div className="rounded-xl border p-3">
+              <div className="text-xs text-muted-foreground">平均最佳主区命中</div>
               <div className="mt-1 text-xl font-semibold">
                 {String(summary.avg_best_primary_hits ?? "—")}
               </div>
             </div>
-            <div className="rounded-xl border border-slate-800 p-3">
-              <div className="text-xs text-slate-400">随机基线主区命中</div>
+            <div className="rounded-xl border p-3">
+              <div className="text-xs text-muted-foreground">随机基线主区命中</div>
               <div className="mt-1 text-xl font-semibold">
                 {String(summary.avg_baseline_primary_hits ?? "—")}
               </div>
             </div>
-            <div className="rounded-xl border border-slate-800 p-3">
-              <div className="text-xs text-slate-400">相对基线提升</div>
+            <div className="rounded-xl border p-3">
+              <div className="text-xs text-muted-foreground">相对基线提升</div>
               <div className="mt-1 text-xl font-semibold">
                 {String(summary.lift_primary_vs_baseline ?? "—")}
               </div>
             </div>
           </div>
-          <p className="mt-3 text-xs text-slate-500">
+          <p className="mt-3 text-xs text-muted-foreground">
             {String(summary.disclaimer ?? "回测结果不代表未来表现。模型评分/历史分析，不承诺中奖。")}
           </p>
 
@@ -244,8 +250,8 @@ export function BacktestsPage() {
           ) : (
             <div className="mt-2 overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="text-slate-400">
-                  <tr className="border-b border-slate-800">
+                <thead className="text-muted-foreground">
+                  <tr className="border-b border">
                     <th className="px-2 py-2">期号</th>
                     <th className="px-2 py-2">最佳主区</th>
                     <th className="px-2 py-2">最佳次区</th>
@@ -254,7 +260,7 @@ export function BacktestsPage() {
                 </thead>
                 <tbody>
                   {(issuesQuery.data?.items ?? []).map((row) => (
-                    <tr key={row.id} className="border-b border-slate-800/70">
+                    <tr key={row.id} className="border-b border/70">
                       <td className="px-2 py-2">
                         {row.hit_metrics?.target_issue ?? row.target_draw_id?.slice(0, 8) ?? "—"}
                       </td>
@@ -270,14 +276,16 @@ export function BacktestsPage() {
                 </tbody>
               </table>
               {!issuesQuery.data?.items?.length ? (
-                <div className="py-3 text-sm text-slate-500">暂无逐期明细。</div>
+                <div className="py-3 text-sm text-muted-foreground">暂无逐期明细。</div>
               ) : null}
             </div>
           )}
-        </Card>
+        </CardContent>
+    </Card>
       ) : null}
 
       <Card>
+      <CardContent className="space-y-4 px-6">
         <h2 className="text-lg font-medium">历史回测</h2>
         <div className="mt-3 space-y-2 text-sm">
           {listQuery.isLoading ? <LoadingState label="加载回测记录..." /> : null}
@@ -291,13 +299,13 @@ export function BacktestsPage() {
             ? (listQuery.data?.items ?? []).map((run) => (
             <button
               key={run.id}
-              className="flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-800 px-3 py-2 text-left hover:bg-slate-800/50"
+              className="flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left hover:bg-secondary/50"
               onClick={() => setActive(run)}
             >
               <span>
                 {run.lottery_type.toUpperCase()} · {run.start_issue}→{run.end_issue} · {run.status}
               </span>
-              <span className="text-slate-500">{new Date(run.created_at).toLocaleString()}</span>
+              <span className="text-muted-foreground">{new Date(run.created_at).toLocaleString()}</span>
             </button>
           ))
             : null}
@@ -305,7 +313,8 @@ export function BacktestsPage() {
             <EmptyState title="暂无回测记录" description="选择历史区间后开始 Walk-forward 回测。" />
           ) : null}
         </div>
-      </Card>
+      </CardContent>
+    </Card>
     </div>
   );
 }

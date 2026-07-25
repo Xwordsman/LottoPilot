@@ -1,10 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card } from "@/components/ui/Card";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingState } from "@/components/ui/LoadingState";
-import { JobProgress } from "@/components/ui/JobProgress";
-import { PageHeader } from "@/components/ui/PageHeader";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorState } from "@/components/ui/error-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { JobProgress } from "@/components/ui/job-progress";
+import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest } from "@/lib/api";
 
 type JobItem = {
@@ -49,6 +52,7 @@ export function JobsPage() {
       />
 
       <Card>
+      <CardContent className="space-y-4 px-6">
         <h2 className="text-lg font-medium">最近任务</h2>
         <div className="mt-3 space-y-2">
           {(query.data?.items ?? []).map((job) => {
@@ -80,7 +84,8 @@ export function JobsPage() {
             <EmptyState title="暂无后台任务" description="触发同步、推荐或回测后会在此显示。" />
           ) : null}
         </div>
-      </Card>
+      </CardContent>
+    </Card>
     </div>
   );
 }

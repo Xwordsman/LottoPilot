@@ -1,12 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingState } from "@/components/ui/LoadingState";
-import { LotterySwitcher } from "@/components/ui/LotterySwitcher";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorState } from "@/components/ui/error-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { LotterySwitcher } from "@/components/ui/lottery-switcher";
+import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest, ApiError } from "@/lib/api";
 import type { LotteryType } from "@/types/draws";
 
@@ -116,16 +119,17 @@ export function StrategiesPage() {
         actions={<LotterySwitcher value={lottery} onChange={setLottery} />}
       />
 
-      {message ? <div className="text-sm text-emerald-400">{message}</div> : null}
-      {error ? <div className="text-sm text-rose-400">{error}</div> : null}
+      {message ? <div className="text-sm text-primary">{message}</div> : null}
+      {error ? <div className="text-sm text-destructive">{error}</div> : null}
 
       <Card>
+      <CardContent className="space-y-4 px-6">
         <h2 className="text-lg font-medium">新建实验版本</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           <label className="space-y-1 text-sm">
             <span>名称</span>
             <input
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -133,7 +137,7 @@ export function StrategiesPage() {
           <label className="space-y-1 text-sm">
             <span>版本</span>
             <input
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2"
               value={version}
               onChange={(e) => setVersion(e.target.value)}
             />
@@ -144,7 +148,7 @@ export function StrategiesPage() {
               type="number"
               min={500}
               max={50000}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2"
               value={candidateCount}
               onChange={(e) => setCandidateCount(Number(e.target.value))}
             />
@@ -155,18 +159,22 @@ export function StrategiesPage() {
             {createMutation.isPending ? "创建中..." : "创建策略版本"}
           </Button>
         </div>
-      </Card>
+      </CardContent>
+    </Card>
 
       <Card>
+      <CardContent className="space-y-4 px-6">
         <h2 className="text-lg font-medium">设为默认时的回测摘要 JSON</h2>
         <textarea
-          className="mt-3 min-h-24 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-xs"
+          className="mt-3 min-h-24 w-full rounded-xl border border-input bg-background px-3 py-2 font-mono text-xs"
           value={summaryJson}
           onChange={(e) => setSummaryJson(e.target.value)}
         />
-      </Card>
+      </CardContent>
+    </Card>
 
       <Card>
+      <CardContent className="space-y-4 px-6">
         <h2 className="text-lg font-medium">{lottery.toUpperCase()} 策略列表</h2>
         <div className="mt-3 space-y-2 text-sm">
           {listQuery.isLoading ? <LoadingState label="加载策略列表..." /> : null}
@@ -177,7 +185,7 @@ export function StrategiesPage() {
             ? (listQuery.data ?? []).map((item) => (
             <div
               key={item.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-800 px-3 py-2"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2"
             >
               <div>
                 <div className="font-medium">
@@ -185,7 +193,7 @@ export function StrategiesPage() {
                   {item.is_default ? " · 默认" : ""}
                   {!item.is_active ? " · 停用" : ""}
                 </div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-muted-foreground">
                   id {item.id.slice(0, 8)} · candidate_count{" "}
                   {String((item.config as { candidate_count?: number })?.candidate_count ?? "—")}
                 </div>
@@ -217,7 +225,8 @@ export function StrategiesPage() {
             <EmptyState title="暂无策略" description="系统会在首次查询时自动创建默认策略。" />
           ) : null}
         </div>
-      </Card>
+      </CardContent>
+    </Card>
     </div>
   );
 }

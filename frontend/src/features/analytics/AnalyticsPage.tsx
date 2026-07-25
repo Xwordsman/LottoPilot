@@ -1,17 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingState } from "@/components/ui/LoadingState";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card"
+import { ErrorState } from "@/components/ui/error-state";
+import { LoadingState } from "@/components/ui/loading-state";
 import { apiRequest } from "@/lib/api";
 import type { AnalyticsOverview } from "@/types/analytics";
 import type { LotteryType } from "@/types/draws";
 
 function StatPill({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-950/50 px-3 py-2">
-      <div className="text-xs text-slate-400">{label}</div>
+    <div className="rounded-xl border bg-background/50 px-3 py-2">
+      <div className="text-xs text-muted-foreground">{label}</div>
       <div className="mt-1 text-lg font-semibold">{value}</div>
     </div>
   );
@@ -31,11 +34,11 @@ function NumberBar({
   const width = max > 0 ? Math.max(4, Math.round((value / max) * 100)) : 0;
   return (
     <div className="grid grid-cols-[2.5rem_1fr_3rem] items-center gap-2 text-sm">
-      <div className="font-medium text-slate-300">{String(number).padStart(2, "0")}</div>
-      <div className="h-2 rounded-full bg-slate-800">
-        <div className="h-2 rounded-full bg-sky-500" style={{ width: `${width}%` }} />
+      <div className="font-medium text-foreground">{String(number).padStart(2, "0")}</div>
+      <div className="h-2 rounded-full bg-secondary">
+        <div className="h-2 rounded-full bg-primary" style={{ width: `${width}%` }} />
       </div>
-      <div className="text-right text-slate-400">
+      <div className="text-right text-muted-foreground">
         {value}
         {suffix ?? ""}
       </div>
@@ -74,7 +77,7 @@ export function AnalyticsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">统计分析</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             频率、遗漏、和值跨度、分区与共现。结果仅基于历史开奖，不承诺中奖。
           </p>
         </div>
@@ -82,7 +85,7 @@ export function AnalyticsPage() {
           {(["ssq", "dlt"] as const).map((key) => (
             <Button
               key={key}
-              variant={lottery === key ? "primary" : "secondary"}
+              variant={lottery === key ? "default" : "secondary"}
               onClick={() => setLottery(key)}
             >
               {key.toUpperCase()}
@@ -91,7 +94,7 @@ export function AnalyticsPage() {
           {[30, 50, 100].map((w) => (
             <Button
               key={w}
-              variant={windowSize === w ? "primary" : "ghost"}
+              variant={windowSize === w ? "default" : "ghost"}
               onClick={() => setWindowSize(w)}
             >
               近 {w} 期
@@ -115,35 +118,42 @@ export function AnalyticsPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
+      <CardContent className="space-y-4 px-6">
           <h2 className="text-lg font-medium">热号 TOP</h2>
           <div className="mt-3 space-y-2">
             {(data?.hot_cold.hot ?? []).map((item) => (
               <NumberBar key={`h-${item.number}`} number={item.number} value={item.count} max={freqMax} />
             ))}
-            {!data?.hot_cold.hot?.length ? <div className="text-sm text-slate-500">暂无数据</div> : null}
+            {!data?.hot_cold.hot?.length ? <div className="text-sm text-muted-foreground">暂无数据</div> : null}
           </div>
-        </Card>
+        </CardContent>
+    </Card>
         <Card>
+      <CardContent className="space-y-4 px-6">
           <h2 className="text-lg font-medium">冷号 TOP</h2>
           <div className="mt-3 space-y-2">
             {(data?.hot_cold.cold ?? []).map((item) => (
               <NumberBar key={`c-${item.number}`} number={item.number} value={item.count} max={freqMax} />
             ))}
-            {!data?.hot_cold.cold?.length ? <div className="text-sm text-slate-500">暂无数据</div> : null}
+            {!data?.hot_cold.cold?.length ? <div className="text-sm text-muted-foreground">暂无数据</div> : null}
           </div>
-        </Card>
+        </CardContent>
+    </Card>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
+      <CardContent className="space-y-4 px-6">
           <h2 className="text-lg font-medium">主区频率</h2>
           <div className="mt-3 max-h-96 space-y-2 overflow-auto pr-1">
             {(data?.frequency_primary ?? []).map((item) => (
               <NumberBar key={`f-${item.number}`} number={item.number} value={item.count} max={freqMax} />
             ))}
           </div>
-        </Card>
+        </CardContent>
+    </Card>
         <Card>
+      <CardContent className="space-y-4 px-6">
           <h2 className="text-lg font-medium">主区当前遗漏</h2>
           <div className="mt-3 max-h-96 space-y-2 overflow-auto pr-1">
             {(data?.missing_primary ?? []).map((item) => (
@@ -155,16 +165,18 @@ export function AnalyticsPage() {
               />
             ))}
           </div>
-        </Card>
+        </CardContent>
+    </Card>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
+      <CardContent className="space-y-4 px-6">
           <h2 className="text-lg font-medium">近期和值 / 跨度 / 奇偶</h2>
           <div className="mt-3 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
-              <thead className="text-slate-400">
-                <tr className="border-b border-slate-800">
+              <thead className="text-muted-foreground">
+                <tr className="border-b border">
                   <th className="px-2 py-2">期号</th>
                   <th className="px-2 py-2">和值</th>
                   <th className="px-2 py-2">跨度</th>
@@ -173,7 +185,7 @@ export function AnalyticsPage() {
               </thead>
               <tbody>
                 {(data?.sum_span ?? []).slice(0, 15).map((row) => (
-                  <tr key={row.issue} className="border-b border-slate-800/70">
+                  <tr key={row.issue} className="border-b border/70">
                     <td className="px-2 py-2">{row.issue}</td>
                     <td className="px-2 py-2">{row.sum}</td>
                     <td className="px-2 py-2">{row.span}</td>
@@ -183,21 +195,23 @@ export function AnalyticsPage() {
               </tbody>
             </table>
           </div>
-        </Card>
+        </CardContent>
+    </Card>
         
       <Card>
+      <CardContent className="space-y-4 px-6">
         <h2 className="text-lg font-medium">分区分布（近窗）</h2>
         <div className="mt-3 overflow-x-auto">
           <table className="min-w-full text-left text-sm">
-            <thead className="text-slate-400">
-              <tr className="border-b border-slate-800">
+            <thead className="text-muted-foreground">
+              <tr className="border-b border">
                 <th className="px-2 py-2">期号</th>
                 <th className="px-2 py-2">分区计数</th>
               </tr>
             </thead>
             <tbody>
               {(data?.zones ?? []).slice(0, 15).map((row) => (
-                <tr key={`z-${row.issue}`} className="border-b border-slate-800/70">
+                <tr key={`z-${row.issue}`} className="border-b border/70">
                   <td className="px-2 py-2">{row.issue}</td>
                   <td className="px-2 py-2">
                     {row.zone_low}/{row.zone_mid}/{row.zone_high}
@@ -207,27 +221,30 @@ export function AnalyticsPage() {
               ))}
             </tbody>
           </table>
-          {!data?.zones?.length ? <div className="mt-2 text-sm text-slate-500">暂无分区数据</div> : null}
+          {!data?.zones?.length ? <div className="mt-2 text-sm text-muted-foreground">暂无分区数据</div> : null}
         </div>
-      </Card>
+      </CardContent>
+    </Card>
 
         <Card>
+      <CardContent className="space-y-4 px-6">
           <h2 className="text-lg font-medium">共现 Top 对</h2>
           <div className="mt-3 space-y-2 text-sm">
             {(data?.cooccurrence ?? []).slice(0, 12).map((pair) => (
               <div
                 key={`${pair.a}-${pair.b}`}
-                className="flex items-center justify-between rounded-xl border border-slate-800 px-3 py-2"
+                className="flex items-center justify-between rounded-xl border px-3 py-2"
               >
                 <span>
                   {String(pair.a).padStart(2, "0")} + {String(pair.b).padStart(2, "0")}
                 </span>
-                <span className="text-slate-400">{pair.count} 次</span>
+                <span className="text-muted-foreground">{pair.count} 次</span>
               </div>
             ))}
-            {!data?.cooccurrence?.length ? <div className="text-slate-500">暂无数据</div> : null}
+            {!data?.cooccurrence?.length ? <div className="text-muted-foreground">暂无数据</div> : null}
           </div>
-        </Card>
+        </CardContent>
+    </Card>
       </div>
     </div>
   );

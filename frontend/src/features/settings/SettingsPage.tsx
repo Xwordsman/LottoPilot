@@ -1,9 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useEffect, useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingState } from "@/components/ui/LoadingState";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card"
+import { ErrorState } from "@/components/ui/error-state";
+import { LoadingState } from "@/components/ui/loading-state";
 import { apiRequest, ApiError } from "@/lib/api";
 import type { AIConfig } from "@/types/recommendations";
 
@@ -196,7 +199,7 @@ export function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">设置</h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <p className="mt-1 text-sm text-muted-foreground">
           AI 配置支持 OpenAI 兼容接口。Key 仅加密存储，接口只返回脱敏值。系统设置含时区、调度与候选池上限。
         </p>
       </div>
@@ -213,12 +216,13 @@ export function SettingsPage() {
       ) : null}
 
       <Card>
+      <CardContent className="space-y-4 px-6">
         <h2 className="text-lg font-medium">新增 / 更新 AI 配置</h2>
         <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={onSubmit}>
           <label className="space-y-1 text-sm">
             <span>名称</span>
             <input
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -227,7 +231,7 @@ export function SettingsPage() {
           <label className="space-y-1 text-sm">
             <span>模型</span>
             <input
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2"
               value={model}
               onChange={(e) => setModel(e.target.value)}
               required
@@ -236,7 +240,7 @@ export function SettingsPage() {
           <label className="space-y-1 text-sm md:col-span-2">
             <span>Base URL</span>
             <input
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2"
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
               required
@@ -246,7 +250,7 @@ export function SettingsPage() {
             <span>API Key</span>
             <input
               type="password"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               required
@@ -258,25 +262,27 @@ export function SettingsPage() {
             </Button>
           </div>
         </form>
-        {message ? <div className="mt-3 text-sm text-emerald-400">{message}</div> : null}
-        {error ? <div className="mt-3 text-sm text-rose-400">{error}</div> : null}
-      </Card>
+        {message ? <div className="mt-3 text-sm text-primary">{message}</div> : null}
+        {error ? <div className="mt-3 text-sm text-destructive">{error}</div> : null}
+      </CardContent>
+    </Card>
 
       <Card>
+      <CardContent className="space-y-4 px-6">
         <h2 className="text-lg font-medium">已保存配置</h2>
         <div className="mt-3 space-y-2 text-sm">
-          {listQuery.isLoading ? <div className="text-sm text-slate-500">加载中...</div> : null}
+          {listQuery.isLoading ? <div className="text-sm text-muted-foreground">加载中...</div> : null}
           {!listQuery.isLoading && !listQuery.isError
             ? (listQuery.data ?? []).map((cfg) => (
             <div
               key={cfg.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-800 px-3 py-2"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2"
             >
               <div>
                 <div className="font-medium">
                   {cfg.name} {cfg.is_default ? "· 默认" : ""} {!cfg.is_active ? "· 已停用" : ""}
                 </div>
-                <div className="text-slate-400">
+                <div className="text-muted-foreground">
                   {cfg.model} · {cfg.base_url} · Key {cfg.api_key_masked || "未设置"}
                 </div>
               </div>
@@ -308,19 +314,21 @@ export function SettingsPage() {
             </div>
           )) : null}
           {!listQuery.isLoading && !listQuery.isError && !listQuery.data?.length ? (
-            <div className="text-slate-500">暂无 AI 配置。</div>
+            <div className="text-muted-foreground">暂无 AI 配置。</div>
           ) : null}
         </div>
-      </Card>
+      </CardContent>
+    </Card>
 
       <Card>
+      <CardContent className="space-y-4 px-6">
         <h2 className="text-lg font-medium">系统设置</h2>
         {sysForm ? (
           <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={onSystemSubmit}>
             <label className="space-y-1 text-sm">
               <span>时区</span>
               <input
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2"
                 value={sysForm.timezone}
                 onChange={(e) => setSysForm({ ...sysForm, timezone: e.target.value })}
               />
@@ -328,7 +336,7 @@ export function SettingsPage() {
             <label className="space-y-1 text-sm">
               <span>默认同步 Cron</span>
               <input
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2"
                 value={sysForm.sync_cron}
                 onChange={(e) => setSysForm({ ...sysForm, sync_cron: e.target.value })}
               />
@@ -339,7 +347,7 @@ export function SettingsPage() {
                 type="number"
                 min={1}
                 max={20}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2"
                 value={sysForm.recommendation_count}
                 onChange={(e) =>
                   setSysForm({ ...sysForm, recommendation_count: Number(e.target.value) })
@@ -353,7 +361,7 @@ export function SettingsPage() {
                 step="0.01"
                 min={0}
                 max={0.1}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2"
                 value={sysForm.ai_weight_cap}
                 onChange={(e) => setSysForm({ ...sysForm, ai_weight_cap: Number(e.target.value) })}
               />
@@ -364,7 +372,7 @@ export function SettingsPage() {
                 type="number"
                 min={500}
                 max={100000}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2"
                 value={sysForm.candidate_pool_max}
                 onChange={(e) =>
                   setSysForm({ ...sysForm, candidate_pool_max: Number(e.target.value) })
@@ -377,7 +385,7 @@ export function SettingsPage() {
                 type="number"
                 min={5}
                 max={5000}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2"
                 value={sysForm.default_window}
                 onChange={(e) => setSysForm({ ...sysForm, default_window: Number(e.target.value) })}
               />
@@ -407,9 +415,11 @@ export function SettingsPage() {
         ) : (
           <div className="mt-3"><LoadingState label="加载系统设置..." /></div>
         )}
-      </Card>
+      </CardContent>
+    </Card>
 
       <Card>
+      <CardContent className="space-y-4 px-6">
         <h2 className="text-lg font-medium">最近审计日志</h2>
         <div className="mt-3 space-y-2 text-sm">
           {auditQuery.isLoading ? <LoadingState label="加载审计日志..." /> : null}
@@ -417,22 +427,23 @@ export function SettingsPage() {
             ? (auditQuery.data ?? []).map((item) => (
             <div
               key={item.id}
-              className="rounded-xl border border-slate-800 px-3 py-2 text-slate-300"
+              className="rounded-xl border px-3 py-2 text-foreground"
             >
               <div className="font-medium">
                 {item.action} · {item.resource_type}
                 {item.resource_id ? ` / ${item.resource_id.slice(0, 8)}` : ""}
               </div>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-muted-foreground">
                 {item.created_at ? new Date(item.created_at).toLocaleString() : "—"}
               </div>
             </div>
           )) : null}
           {!auditQuery.isLoading && !auditQuery.isError && !auditQuery.data?.length ? (
-            <div className="text-slate-500">暂无审计记录。</div>
+            <div className="text-muted-foreground">暂无审计记录。</div>
           ) : null}
         </div>
-      </Card>
+      </CardContent>
+    </Card>
     </div>
   );
 }

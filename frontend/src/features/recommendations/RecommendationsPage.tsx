@@ -1,13 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingState } from "@/components/ui/LoadingState";
-import { LotterySwitcher } from "@/components/ui/LotterySwitcher";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { TicketCard } from "@/components/ui/TicketCard";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorState } from "@/components/ui/error-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { LotterySwitcher } from "@/components/ui/lottery-switcher";
+import { PageHeader } from "@/components/ui/page-header";
+import { TicketCard } from "@/components/ui/ticket-card";
 import { apiRequest, ApiError } from "@/lib/api";
 import type { LotteryType } from "@/types/draws";
 import type { RecommendationList, RecommendationRun } from "@/types/recommendations";
@@ -134,11 +137,12 @@ export function RecommendationsPage() {
       />
 
       <Card>
+      <CardContent className="space-y-4 px-6">
         <div className="grid gap-3 md:grid-cols-4">
           <label className="space-y-1 text-sm">
             <span>目标期（可选）</span>
             <input
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2"
               value={targetIssue}
               onChange={(e) => setTargetIssue(e.target.value)}
               placeholder="默认自动推断下一期"
@@ -148,13 +152,13 @@ export function RecommendationsPage() {
             <span>Seed（可选）</span>
             <input
               type="number"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2"
               value={seed}
               onChange={(e) => setSeed(e.target.value)}
               placeholder="固定 seed 可复现"
             />
           </label>
-          <label className="inline-flex items-end gap-2 text-sm text-slate-300 pb-2">
+          <label className="inline-flex items-end gap-2 text-sm text-foreground pb-2">
             <input
               type="checkbox"
               checked={enableAi}
@@ -172,9 +176,10 @@ export function RecommendationsPage() {
             </Button>
           </div>
         </div>
-        {message ? <div className="mt-3 text-sm text-emerald-400">{message}</div> : null}
-        {error ? <div className="mt-3 text-sm text-rose-400">{error}</div> : null}
-      </Card>
+        {message ? <div className="mt-3 text-sm text-primary">{message}</div> : null}
+        {error ? <div className="mt-3 text-sm text-destructive">{error}</div> : null}
+      </CardContent>
+    </Card>
 
       {listQuery.isLoading ? <LoadingState label="加载推荐记录..." /> : null}
       {listQuery.isError ? (
@@ -187,12 +192,13 @@ export function RecommendationsPage() {
 
       {current ? (
         <Card>
+      <CardContent className="space-y-4 px-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-medium">
                 {current.lottery_type.toUpperCase()} · 目标期 {current.target_issue ?? "—"}
               </h2>
-              <div className="mt-1 text-sm text-slate-400">
+              <div className="mt-1 text-sm text-muted-foreground">
                 seed {current.seed ?? "—"} · snapshot {current.data_snapshot_hash?.slice(0, 10) ?? "—"} · AI{" "}
                 {current.ai_status}
                 {current.evaluation
@@ -228,34 +234,37 @@ export function RecommendationsPage() {
             {(current.tickets ?? []).map((ticket) => (
               <TicketCard key={ticket.id} ticket={ticket} />
             ))}
-            <p className="text-xs text-slate-500">模型评分/历史分析，不承诺中奖。</p>
+            <p className="text-xs text-muted-foreground">模型评分/历史分析，不承诺中奖。</p>
           </div>
-        </Card>
+        </CardContent>
+    </Card>
       ) : !listQuery.isLoading && !listQuery.isError ? (
         <EmptyState title="还没有推荐记录" description="请先同步开奖数据，再生成推荐。" />
       ) : null}
 
       <Card>
+      <CardContent className="space-y-4 px-6">
         <h2 className="text-lg font-medium">历史推荐</h2>
         <div className="mt-3 space-y-2 text-sm">
           {(listQuery.data?.items ?? []).map((run) => (
             <button
               key={run.id}
-              className="flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-800 px-3 py-2 text-left hover:bg-slate-800/50"
+              className="flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left hover:bg-secondary/50"
               onClick={() => setActive(run)}
             >
               <span>
                 {run.lottery_type.toUpperCase()} · {run.target_issue ?? "—"} · seed {run.seed ?? "—"} · AI{" "}
                 {run.ai_status}
               </span>
-              <span className="text-slate-500">{new Date(run.created_at).toLocaleString()}</span>
+              <span className="text-muted-foreground">{new Date(run.created_at).toLocaleString()}</span>
             </button>
           ))}
           {!listQuery.data?.items?.length ? (
-            <div className="text-slate-500">暂无历史。</div>
+            <div className="text-muted-foreground">暂无历史。</div>
           ) : null}
         </div>
-      </Card>
+      </CardContent>
+    </Card>
     </div>
   );
 }

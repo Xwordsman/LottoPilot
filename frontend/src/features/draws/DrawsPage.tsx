@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { JobProgress } from "@/components/ui/JobProgress";
-import { NumberBall } from "@/components/ui/NumberBall";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state";
+import { JobProgress } from "@/components/ui/job-progress";
+import { NumberBall } from "@/components/ui/number-ball";
+import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest, ApiError } from "@/lib/api";
 import type {
   DrawListData,
@@ -175,36 +178,39 @@ export function DrawsPage() {
         }
       />
 
-      {message ? <div className="text-sm text-emerald-400">{message}</div> : null}
-      {error ? <div className="text-sm text-rose-400">{error}</div> : null}
+      {message ? <div className="text-sm text-primary">{message}</div> : null}
+      {error ? <div className="text-sm text-destructive">{error}</div> : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         {latestCards.map((card) => (
           <Card key={card.key}>
-            <div className="text-sm text-slate-400">{card.title}</div>
+      <CardContent className="space-y-4 px-6">
+            <div className="text-sm text-muted-foreground">{card.title}</div>
             {card.draw ? (
               <>
                 <div className="mt-2 text-xl font-semibold">第 {card.draw.issue} 期</div>
-                <div className="mt-1 text-xs text-slate-500">{card.draw.draw_date}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{card.draw.draw_date}</div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {card.draw.primary_numbers.map((n) => (
-                    <NumberBall key={`p-${n}`} n={n} tone="primary" />
+                    <NumberBall key={`p-${n}`} n={n} tone="red" />
                   ))}
                   {card.draw.secondary_numbers.map((n) => (
-                    <NumberBall key={`s-${n}`} n={n} tone="secondary" />
+                    <NumberBall key={`s-${n}`} n={n} tone="blue" />
                   ))}
                 </div>
               </>
             ) : (
-              <div className="mt-3 text-sm text-slate-500">暂无数据，请先同步或导入。</div>
+              <div className="mt-3 text-sm text-muted-foreground">暂无数据，请先同步或导入。</div>
             )}
-          </Card>
+          </CardContent>
+    </Card>
         ))}
       </div>
 
       <Card>
+      <CardContent className="space-y-4 px-6">
         <h2 className="text-lg font-medium">CSV 导入</h2>
-        <p className="mt-1 text-sm text-slate-400">
+        <p className="mt-1 text-sm text-muted-foreground">
           先预览校验，再提交有效行。样例：backend/tests/fixtures/ssq_import_20.csv
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -227,12 +233,12 @@ export function DrawsPage() {
         </div>
         {preview ? (
           <div className="mt-4 overflow-x-auto">
-            <div className="mb-2 text-xs text-slate-500">
+            <div className="mb-2 text-xs text-muted-foreground">
               总 {preview.total_rows} · 有效 {preview.valid_rows} · 无效 {preview.invalid_rows}
             </div>
             <table className="min-w-full text-left text-sm">
-              <thead className="text-slate-400">
-                <tr className="border-b border-slate-800">
+              <thead className="text-muted-foreground">
+                <tr className="border-b border">
                   <th className="px-2 py-2">行</th>
                   <th className="px-2 py-2">彩种</th>
                   <th className="px-2 py-2">期号</th>
@@ -242,28 +248,30 @@ export function DrawsPage() {
               </thead>
               <tbody>
                 {preview.rows.slice(0, 20).map((row) => (
-                  <tr key={row.row_number} className="border-b border-slate-800/70">
+                  <tr key={row.row_number} className="border-b border/70">
                     <td className="px-2 py-2">{row.row_number}</td>
                     <td className="px-2 py-2 uppercase">{row.lottery_type ?? "—"}</td>
                     <td className="px-2 py-2">{row.issue ?? "—"}</td>
                     <td className="px-2 py-2">{row.valid ? "有效" : "无效"}</td>
-                    <td className="px-2 py-2 text-rose-400">{row.errors.join("; ") || "—"}</td>
+                    <td className="px-2 py-2 text-destructive">{row.errors.join("; ") || "—"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : null}
-      </Card>
+      </CardContent>
+    </Card>
 
       <Card>
+      <CardContent className="space-y-4 px-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-medium">历史记录</h2>
           <div className="flex gap-2">
             {(["all", "ssq", "dlt"] as const).map((key) => (
               <Button
                 key={key}
-                variant={lottery === key ? "primary" : "ghost"}
+                variant={lottery === key ? "default" : "ghost"}
                 onClick={() => {
                   setLottery(key);
                   setPage(1);
@@ -277,8 +285,8 @@ export function DrawsPage() {
 
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
-            <thead className="text-slate-400">
-              <tr className="border-b border-slate-800">
+            <thead className="text-muted-foreground">
+              <tr className="border-b border">
                 <th className="px-2 py-2 font-medium">彩种</th>
                 <th className="px-2 py-2 font-medium">期号</th>
                 <th className="px-2 py-2 font-medium">日期</th>
@@ -289,27 +297,27 @@ export function DrawsPage() {
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td className="px-2 py-6 text-slate-500" colSpan={5}>
+                  <td className="px-2 py-6 text-muted-foreground" colSpan={5}>
                     {listQuery.isLoading ? "加载中..." : listQuery.isError ? "加载失败，可重试" : "暂无开奖记录"}
                   </td>
                 </tr>
               ) : (
                 items.map((row) => (
-                  <tr key={row.id} className="border-b border-slate-800/70">
+                  <tr key={row.id} className="border-b border/70">
                     <td className="px-2 py-3 uppercase">{row.lottery_type}</td>
                     <td className="px-2 py-3">{row.issue}</td>
                     <td className="px-2 py-3">{row.draw_date}</td>
                     <td className="px-2 py-3">
                       <div className="flex flex-wrap gap-1.5">
                         {row.primary_numbers.map((n) => (
-                          <NumberBall key={`${row.id}-p-${n}`} n={n} tone="primary" />
+                          <NumberBall key={`${row.id}-p-${n}`} n={n} tone="red" />
                         ))}
                         {row.secondary_numbers.map((n) => (
-                          <NumberBall key={`${row.id}-s-${n}`} n={n} tone="secondary" />
+                          <NumberBall key={`${row.id}-s-${n}`} n={n} tone="blue" />
                         ))}
                       </div>
                     </td>
-                    <td className="px-2 py-3 text-slate-400">{row.source}</td>
+                    <td className="px-2 py-3 text-muted-foreground">{row.source}</td>
                   </tr>
                 ))
               )}
@@ -317,7 +325,7 @@ export function DrawsPage() {
           </table>
         </div>
 
-        <div className="mt-4 flex items-center justify-between text-sm text-slate-400">
+        <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <div>
             共 {listQuery.data?.total ?? 0} 条
             {totalPages ? ` · 第 ${page}/${totalPages} 页` : ""}
@@ -335,9 +343,11 @@ export function DrawsPage() {
             </Button>
           </div>
         </div>
-      </Card>
+      </CardContent>
+    </Card>
 
       <Card>
+      <CardContent className="space-y-4 px-6">
         <h2 className="text-lg font-medium">最近同步任务</h2>
         <div className="mt-3 space-y-2 text-sm">
           {(runsQuery.data?.items ?? []).length === 0 ? (
@@ -355,7 +365,8 @@ export function DrawsPage() {
             ))
           )}
         </div>
-      </Card>
+      </CardContent>
+    </Card>
     </div>
   );
 }

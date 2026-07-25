@@ -1,47 +1,58 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingState } from "@/components/ui/LoadingState";
-import { LotterySwitcher } from "@/components/ui/LotterySwitcher";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { TicketCard } from "@/components/ui/TicketCard";
-import { apiRequest, ApiError } from "@/lib/api";
-import { useAuthStore } from "@/lib/auth-store";
-import type { SystemInfo } from "@/types/api";
-import type { LotteryType } from "@/types/draws";
-import type { RecommendationList, RecommendationRun } from "@/types/recommendations";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useState } from "react"
+import { Link } from "react-router-dom"
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { EmptyState } from "@/components/ui/empty-state"
+import { ErrorState } from "@/components/ui/error-state"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { LoadingState } from "@/components/ui/loading-state"
+import { LotterySwitcher } from "@/components/ui/lottery-switcher"
+import { PageHeader } from "@/components/ui/page-header"
+import { TicketCard } from "@/components/ui/ticket-card"
+import { apiRequest, ApiError } from "@/lib/api"
+import { useAuthStore } from "@/lib/auth-store"
+import type { SystemInfo } from "@/types/api"
+import type { LotteryType } from "@/types/draws"
+import type { RecommendationList, RecommendationRun } from "@/types/recommendations"
 
 export function DashboardPage() {
-  const user = useAuthStore((s) => s.user);
-  const queryClient = useQueryClient();
-  const [lottery, setLottery] = useState<LotteryType>("ssq");
-  const [enableAi, setEnableAi] = useState(true);
-  const [seed, setSeed] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [generated, setGenerated] = useState<RecommendationRun | null>(null);
+  const user = useAuthStore((s) => s.user)
+  const queryClient = useQueryClient()
+  const [lottery, setLottery] = useState<LotteryType>("ssq")
+  const [enableAi, setEnableAi] = useState(true)
+  const [seed, setSeed] = useState("")
+  const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [generated, setGenerated] = useState<RecommendationRun | null>(null)
 
   const infoQuery = useQuery({
     queryKey: ["system-info"],
     queryFn: async () => {
-      const res = await apiRequest<SystemInfo>("/system/info");
-      return res.data!;
+      const res = await apiRequest<SystemInfo>("/system/info")
+      return res.data!
     },
-  });
+  })
 
   const recQuery = useQuery({
     queryKey: ["recommendations", "dashboard", lottery],
     queryFn: async () => {
       const res = await apiRequest<RecommendationList>(
-        `/recommendations?lottery_type=${lottery}&page=1&page_size=1`,
-      );
-      return res.data!;
+        `/recommendations?lottery_type=${lottery}&page=1&page_size=1`
+      )
+      return res.data!
     },
-  });
+  })
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -53,29 +64,29 @@ export function DashboardPage() {
           enable_ai: enableAi,
           ...(seed.trim() ? { seed: Number(seed) } : {}),
         }),
-      });
-      return res.data!;
+      })
+      return res.data!
     },
     onSuccess: (data) => {
-      setError(null);
+      setError(null)
       setMessage(
-        `已生成 ${data.lottery_type.toUpperCase()} 5 组候选，目标期 ${data.target_issue ?? "-"}，AI ${data.ai_status}`,
-      );
-      setGenerated(data);
-      void queryClient.invalidateQueries({ queryKey: ["recommendations"] });
-      void queryClient.invalidateQueries({ queryKey: ["system-info"] });
+        `已生成 ${data.lottery_type.toUpperCase()} 5 组候选，目标期 ${data.target_issue ?? "-"}，AI ${data.ai_status}`
+      )
+      setGenerated(data)
+      void queryClient.invalidateQueries({ queryKey: ["recommendations"] })
+      void queryClient.invalidateQueries({ queryKey: ["system-info"] })
     },
     onError: (err: unknown) => {
-      setMessage(null);
-      setError(err instanceof ApiError ? err.message : "生成推荐失败");
+      setMessage(null)
+      setError(err instanceof ApiError ? err.message : "生成推荐失败")
     },
-  });
+  })
 
-  const current = generated ?? recQuery.data?.items?.[0] ?? null;
+  const current = generated ?? recQuery.data?.items?.[0] ?? null
   const latestIssue =
     lottery === "ssq"
       ? infoQuery.data?.latest_draws?.ssq
-      : infoQuery.data?.latest_draws?.dlt;
+      : infoQuery.data?.latest_draws?.dlt
 
   return (
     <div className="space-y-6">
@@ -87,126 +98,156 @@ export function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
-          <div className="text-sm text-slate-400">最新开奖期</div>
-          <div className="mt-2 text-xl font-semibold">{latestIssue ?? "暂无数据"}</div>
+          <CardHeader className="pb-2">
+            <CardDescription>最新开奖期</CardDescription>
+            <CardTitle className="text-xl">{latestIssue ?? "暂无数据"}</CardTitle>
+          </CardHeader>
         </Card>
         <Card>
-          <div className="text-sm text-slate-400">目标期（下一期）</div>
-          <div className="mt-2 text-xl font-semibold">{current?.target_issue ?? "生成后可见"}</div>
+          <CardHeader className="pb-2">
+            <CardDescription>目标期（下一期）</CardDescription>
+            <CardTitle className="text-xl">
+              {current?.target_issue ?? "生成后可见"}
+            </CardTitle>
+          </CardHeader>
         </Card>
         <Card>
-          <div className="text-sm text-slate-400">数据版本</div>
-          <div className="mt-2 text-xl font-semibold">{infoQuery.data?.version ?? "—"}</div>
-          <div className="mt-1 text-xs text-slate-500">
+          <CardHeader className="pb-2">
+            <CardDescription>数据版本</CardDescription>
+            <CardTitle className="text-xl">{infoQuery.data?.version ?? "—"}</CardTitle>
+          </CardHeader>
+          <CardContent className="text-xs text-muted-foreground">
             commit {infoQuery.data?.git_commit ?? "dev"}
-          </div>
+          </CardContent>
         </Card>
         <Card>
-          <div className="text-sm text-slate-400">AI 状态</div>
-          <div className="mt-2 text-xl font-semibold">{current?.ai_status ?? "未生成"}</div>
+          <CardHeader className="pb-2">
+            <CardDescription>AI 状态</CardDescription>
+            <CardTitle className="text-xl">{current?.ai_status ?? "未生成"}</CardTitle>
+          </CardHeader>
         </Card>
       </div>
 
       <Card>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-medium">生成 5 组候选</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              无 AI Key 时仍可纯统计生成。AI 仅做 ≤10% 有限重排/解释，失败自动降级。
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <label className="inline-flex items-center gap-2 text-sm text-slate-300">
-              Seed
-              <input
-                type="number"
-                className="w-28 rounded-xl border border-slate-700 bg-slate-950 px-2 py-1"
+        <CardHeader>
+          <CardTitle>生成 5 组候选</CardTitle>
+          <CardDescription>
+            无 AI Key 时仍可纯统计生成。AI 仅做 ≤10% 有限重排/解释，失败自动降级。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="seed">Seed（可选）</Label>
+              <Input
+                id="seed"
+                className="w-36"
                 value={seed}
                 onChange={(e) => setSeed(e.target.value)}
                 placeholder="可选"
               />
-            </label>
-            <label className="inline-flex items-center gap-2 text-sm text-slate-300">
-              <input
-                type="checkbox"
+            </div>
+            <div className="flex items-center gap-2 pb-2">
+              <Checkbox
+                id="enable-ai"
                 checked={enableAi}
-                onChange={(e) => setEnableAi(e.target.checked)}
+                onCheckedChange={(v) => setEnableAi(Boolean(v))}
               />
-              启用 AI
-            </label>
-            <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
+              <Label htmlFor="enable-ai">启用 AI</Label>
+            </div>
+            <Button
+              disabled={createMutation.isPending}
+              onClick={() => createMutation.mutate()}
+            >
               {createMutation.isPending ? "生成中..." : "生成本期 5 组"}
             </Button>
-            <Link to="/recommendations">
-              <Button variant="secondary">推荐记录</Button>
-            </Link>
+            <Button asChild variant="outline">
+              <Link to="/recommendations">推荐记录</Link>
+            </Button>
           </div>
-        </div>
-        {message ? <div className="mt-3 text-sm text-emerald-400">{message}</div> : null}
-        {error ? <div className="mt-3 text-sm text-rose-400">{error}</div> : null}
+          {message ? (
+            <Alert>
+              <AlertTitle>生成成功</AlertTitle>
+              <AlertDescription>{message}</AlertDescription>
+            </Alert>
+          ) : null}
+          {error ? (
+            <Alert variant="destructive">
+              <AlertTitle>生成失败</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : null}
+        </CardContent>
       </Card>
 
       <Card>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-medium">
+        <CardHeader>
+          <CardTitle>
             {current
               ? `${current.lottery_type.toUpperCase()} · 目标期 ${current.target_issue ?? "—"}`
               : "候选组合"}
-          </h2>
+          </CardTitle>
           {current ? (
-            <div className="text-xs text-slate-500">
+            <CardDescription>
               seed {current.seed ?? "—"} · AI {current.ai_status}
-            </div>
+            </CardDescription>
           ) : null}
-        </div>
-        {recQuery.isLoading ? <div className="mt-4"><LoadingState label="加载最近推荐..." /></div> : null}
-        {recQuery.isError ? (
-          <div className="mt-4">
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {recQuery.isLoading ? <LoadingState label="加载最近推荐..." /> : null}
+          {recQuery.isError ? (
             <ErrorState
               title="推荐加载失败"
               description="请检查登录态或后端服务后重试。"
               onRetry={() => void recQuery.refetch()}
             />
-          </div>
-        ) : null}
-        {!recQuery.isLoading && !recQuery.isError && current ? (
-          <div className="mt-4 space-y-3">
-            {(current.tickets ?? []).slice(0, 5).map((ticket) => (
-              <TicketCard key={ticket.id} ticket={ticket} />
-            ))}
-            <p className="text-xs text-slate-500">模型评分/历史分析，不承诺中奖。</p>
-          </div>
-        ) : null}
-        {!recQuery.isLoading && !recQuery.isError && !current ? (
-          <div className="mt-4">
+          ) : null}
+          {!recQuery.isLoading && !recQuery.isError && current ? (
+            <div className="space-y-3">
+              {(current.tickets ?? []).slice(0, 5).map((ticket) => (
+                <TicketCard key={ticket.id} ticket={ticket} />
+              ))}
+              <p className="text-xs text-muted-foreground">
+                模型评分/历史分析，不承诺中奖。
+              </p>
+            </div>
+          ) : null}
+          {!recQuery.isLoading && !recQuery.isError && !current ? (
             <EmptyState
               title="还没有本期推荐"
               description="请先同步或导入开奖数据，然后点击“生成本期 5 组”。"
+              action={
+                <Button asChild variant="outline">
+                  <Link to="/draws">去开奖数据</Link>
+                </Button>
+              }
             />
-          </div>
-        ) : null}
+          ) : null}
+        </CardContent>
       </Card>
 
       <Card>
-        <h2 className="text-lg font-medium">快捷入口</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Link to="/draws">
-            <Button variant="secondary">开奖数据</Button>
-          </Link>
-          <Link to="/analytics">
-            <Button variant="secondary">统计分析</Button>
-          </Link>
-          <Link to="/backtests">
-            <Button variant="secondary">历史回测</Button>
-          </Link>
-          <Link to="/strategies">
-            <Button variant="secondary">策略配置</Button>
-          </Link>
-          <Link to="/settings">
-            <Button variant="secondary">系统/AI 设置</Button>
-          </Link>
-        </div>
+        <CardHeader>
+          <CardTitle>快捷入口</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button asChild variant="secondary">
+            <Link to="/draws">开奖数据</Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link to="/analytics">统计分析</Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link to="/backtests">历史回测</Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link to="/strategies">策略配置</Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link to="/settings">系统/AI 设置</Link>
+          </Button>
+        </CardContent>
       </Card>
     </div>
-  );
+  )
 }

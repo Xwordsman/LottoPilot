@@ -1,100 +1,146 @@
-import { NavLink, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/Button";
-import { apiRequest } from "@/lib/api";
-import { useAuthStore } from "@/lib/auth-store";
-import { cn } from "@/lib/cn";
-import { useThemeStore } from "@/lib/theme-store";
+import {
+  BarChart3,
+  Database,
+  History,
+  LayoutDashboard,
+  LogOut,
+  Moon,
+  Settings2,
+  Sun,
+  Target,
+  Ticket,
+  Workflow,
+} from "lucide-react"
+import type { ReactNode } from "react"
+import { NavLink, useNavigate } from "react-router-dom"
 
-const links = [
-  { to: "/", label: "推荐" },
-  { to: "/recommendations", label: "记录" },
-  { to: "/draws", label: "开奖" },
-  { to: "/analytics", label: "统计" },
-  { to: "/backtests", label: "回测" },
-  { to: "/strategies", label: "策略" },
-  { to: "/jobs", label: "任务" },
-  { to: "/settings", label: "设置" },
-];
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { apiRequest } from "@/lib/api"
+import { useAuthStore } from "@/lib/auth-store"
+import { cn } from "@/lib/utils"
+import { useThemeStore } from "@/lib/theme-store"
 
-export function AppShell({ children }: { children: React.ReactNode }) {
-  const theme = useThemeStore((s) => s.theme);
-  const toggleTheme = useThemeStore((s) => s.toggleTheme);
-  const setUser = useAuthStore((s) => s.setUser);
-  const navigate = useNavigate();
+const nav = [
+  { to: "/", label: "推荐", icon: LayoutDashboard },
+  { to: "/recommendations", label: "记录", icon: Ticket },
+  { to: "/draws", label: "开奖", icon: History },
+  { to: "/analytics", label: "统计", icon: BarChart3 },
+  { to: "/backtests", label: "回测", icon: Target },
+  { to: "/strategies", label: "策略", icon: Workflow },
+  { to: "/jobs", label: "任务", icon: Database },
+  { to: "/settings", label: "设置", icon: Settings2 },
+]
+
+export function AppShell({ children }: { children: ReactNode }) {
+  const user = useAuthStore((s) => s.user)
+  const setUser = useAuthStore((s) => s.setUser)
+  const theme = useThemeStore((s) => s.theme)
+  const toggleTheme = useThemeStore((s) => s.toggleTheme)
+  const navigate = useNavigate()
 
   async function logout() {
     try {
-      await apiRequest("/auth/logout", { method: "POST" });
+      await apiRequest("/auth/logout", { method: "POST" })
     } catch {
-      // ignore network error; clear local session anyway
+      // ignore
     }
-    setUser(null);
-    navigate("/login", { replace: true });
+    setUser(null)
+    navigate("/login", { replace: true })
   }
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
-      <header className="sticky top-0 z-20 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-violet-500 text-sm font-bold text-slate-950">
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="mx-auto flex min-h-screen max-w-7xl">
+        <aside className="hidden w-64 shrink-0 border-r bg-sidebar text-sidebar-foreground md:flex md:flex-col">
+          <div className="flex h-16 items-center gap-2 px-6">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
               LP
             </div>
             <div>
-              <div className="text-lg font-semibold tracking-tight">LottoPilot</div>
-              <div className="text-xs text-slate-400">历史分析 · 候选推荐 · 滚动回测</div>
+              <div className="text-sm font-semibold tracking-tight">LottoPilot</div>
+              <div className="text-xs text-muted-foreground">分析 · 推荐 · 回测</div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <nav className="hidden items-center gap-1 md:flex">
-              {links.map((link) => (
+          <Separator />
+          <nav className="flex flex-1 flex-col gap-1 p-3">
+            {nav.map((item) => {
+              const Icon = item.icon
+              return (
                 <NavLink
-                  key={link.to}
-                  to={link.to}
-                  end={link.to === "/"}
+                  key={item.to}
+                  to={item.to}
+                  end={item.to === "/"}
                   className={({ isActive }) =>
                     cn(
-                      "rounded-xl px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white",
-                      isActive && "bg-slate-800 text-white",
+                      "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+                      isActive
+                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                        : "text-muted-foreground hover:bg-sidebar-accent/70 hover:text-foreground"
                     )
                   }
                 >
-                  {link.label}
+                  <Icon className="size-4" />
+                  {item.label}
+                </NavLink>
+              )
+            })}
+          </nav>
+          <div className="space-y-3 border-t p-4">
+            <div className="text-xs text-muted-foreground">
+              {user ? `${user.display_name} · ${user.email}` : "未登录"}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="flex-1" onClick={toggleTheme}>
+                {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+                {theme === "dark" ? "浅色" : "深色"}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => void logout()}>
+                <LogOut className="size-4" />
+              </Button>
+            </div>
+          </div>
+        </aside>
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b bg-background/90 px-4 backdrop-blur md:hidden">
+            <div className="font-semibold">LottoPilot</div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" onClick={toggleTheme}>
+                {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => void logout()}>
+                退出
+              </Button>
+            </div>
+          </header>
+          <div className="border-b bg-background px-3 py-2 md:hidden">
+            <div className="flex gap-1 overflow-x-auto">
+              {nav.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.to === "/"}
+                  className={({ isActive }) =>
+                    cn(
+                      "rounded-md px-3 py-1.5 text-xs whitespace-nowrap",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
+                    )
+                  }
+                >
+                  {item.label}
                 </NavLink>
               ))}
-            </nav>
-            <Button variant="secondary" onClick={toggleTheme} aria-label="切换主题">
-              {theme === "dark" ? "浅色" : "深色"}
-            </Button>
-            <Button variant="ghost" onClick={() => void logout()}>
-              退出
-            </Button>
+            </div>
           </div>
+          <main className="flex-1 space-y-6 p-4 md:p-8">{children}</main>
+          <footer className="border-t px-4 py-4 text-xs text-muted-foreground md:px-8">
+            本系统只做历史数据分析与模型评分，不承诺中奖，不提供购彩交易。
+          </footer>
         </div>
-      </header>
-      <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
-      <footer className="mx-auto max-w-7xl px-4 pb-8 text-xs text-slate-500">
-        本系统只做历史数据分析与模型评分，不承诺中奖，不提供购彩交易。
-      </footer>
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-800 bg-slate-950/95 backdrop-blur md:hidden">
-        <div className="mx-auto grid max-w-7xl grid-cols-4 gap-1 px-2 py-2 sm:grid-cols-7">
-          {links.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.to === "/"}
-              className={({ isActive }) =>
-                cn(
-                  "rounded-lg px-1 py-2 text-center text-[11px] text-slate-400",
-                  isActive && "bg-slate-800 text-white",
-                )
-              }
-            >
-              {link.label}
-            </NavLink>
-          ))}
-        </div>
-      </nav>
+      </div>
     </div>
-  );
+  )
 }
