@@ -74,10 +74,10 @@ def main() -> int:
     (ok if "HTTPS" in rt or "反代" in rt or "nginx" in rt.lower() else fail)("baota:readme_proxy")
     (ok if "backup" in rt.lower() or "备份" in rt else fail)("baota:readme_backup")
 
-    for name in ["scripts/backup_pg.sh", "scripts/restore_pg.sh", ".github/workflows/docker.yml", "docs/RELEASE_NOTES_v1.0.0.md"]:
+    for name in ["scripts/backup_pg.sh", "scripts/restore_pg.sh", ".github/workflows/ci.yml", "docs/RELEASE_NOTES_v1.0.0.md"]:
         (ok if (ROOT / name).exists() else fail)(f"exists:{name}")
 
-    docker_wf = (ROOT / ".github/workflows/docker.yml").read_text(encoding="utf-8")
+    docker_wf = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
     (ok if "setup-qemu-action" in docker_wf and "setup-buildx-action" in docker_wf else fail)("docker_wf:multiarch")
     (ok if "ghcr.io" in docker_wf else fail)("docker_wf:ghcr")
 

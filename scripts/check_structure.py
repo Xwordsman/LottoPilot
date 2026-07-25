@@ -39,7 +39,7 @@ def main() -> int:
         "frontend/src/features/jobs/JobsPage.tsx","frontend/src/components/ui/NumberBall.tsx","frontend/src/components/ui/PageHeader.tsx",
         "frontend/src/components/ui/LotterySwitcher.tsx","frontend/src/components/ui/EmptyState.tsx","frontend/src/components/ui/JobProgress.tsx",
         "frontend/src/components/ui/TicketCard.tsx","frontend/src/components/ui/LoadingState.tsx","frontend/src/components/ui/ErrorState.tsx","frontend/src/lib/theme-store.ts","scripts/offline_acceptance.py","scripts/run_unit_offline.py","scripts/local_api_smoke.py","scripts/local_sqlite_e2e.py","scripts/local_fullstack_smoke.py",
-        "scripts/backup_pg.sh","scripts/restore_pg.sh","docs/RELEASE_NOTES_v1.0.0.md",".github/workflows/docker.yml",
+        "scripts/backup_pg.sh","scripts/restore_pg.sh","docs/RELEASE_NOTES_v1.0.0.md",".github/workflows/ci.yml",
         "deploy/baota/docker-compose.yml","backend/tests/fixtures/ssq_import_20.csv",".github/workflows/ci.yml",
     ]
     for rel in required: must_exist(rel)
@@ -83,7 +83,7 @@ def main() -> int:
     (ok if (ROOT / "scripts/local_fullstack_smoke.py").exists() else fail)("exists:local_fullstack_smoke")
     (ok if (ROOT / "scripts/validate_compose_static.py").exists() else fail)("exists:validate_compose_static")
     (ok if (ROOT / ".github/workflows/ci.yml").exists() else fail)("exists:ci_yml")
-    (ok if (ROOT / ".github/workflows/docker.yml").exists() else fail)("exists:docker_yml")
+    (ok if (ROOT / ".github/workflows/ci.yml").exists() else fail)("exists:docker_yml")
     (ok if (ROOT / "frontend/src/lib/theme-store.test.ts").exists() else fail)("exists:theme_store_test")
     (ok if (ROOT / "backend/tests/integration/test_sqlite_e2e.py").exists() else fail)("exists:test_sqlite_e2e")
     (ok if (ROOT / "backend/app/db/types.py").exists() else fail)("exists:db_types")

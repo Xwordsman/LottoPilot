@@ -6,7 +6,7 @@
 ## 服务器 Docker 部署路径
 
 - [ ] GitHub Actions `ci.yml` 全绿
-- [ ] GitHub Actions `docker.yml` 已推送 `ghcr.io/<owner>/lottopilot:<tag>`
+- [ ] GitHub Actions `ci.yml`（image job） 已推送 `ghcr.io/<owner>/lottopilot:<tag>`
 - [ ] 服务器已 `docker login ghcr.io`（如包为 private）
 - [ ] `.env` 已从 `.env.example` 生成并修改密钥/密码/`APP_PUBLIC_URL`
 - [ ] `LOTTOPILOT_IMAGE` 指向正确版本标签

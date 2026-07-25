@@ -451,7 +451,7 @@ def main() -> int:
         ROOT / "backend" / "tests" / "fixtures" / "ssq_import_20.csv",
         ROOT / "docs" / "RELEASE_NOTES_v1.0.0.md",
         ROOT / "docs" / "MANUAL_ACCEPTANCE_CHECKLIST.md",
-        ROOT / ".github" / "workflows" / "docker.yml",
+        ROOT / ".github" / "workflows" / "ci.yml",
         ROOT / "scripts" / "backup_pg.sh",
         ROOT / "scripts" / "restore_pg.sh",
         ROOT / "deploy" / "baota" / "docker-compose.yml",

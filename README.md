@@ -17,7 +17,7 @@
 本地开发提交
   → 推送到 GitHub (main / tag v*)
   → Actions: ci.yml（结构/离线验收/后端/前端）
-  → Actions: docker.yml（多架构镜像 → ghcr.io/<owner>/lottopilot）
+  → Actions: ci.yml（多架构镜像 → ghcr.io/<owner>/lottopilot）
   → 服务器 docker compose 拉取镜像并启动
 ```
 

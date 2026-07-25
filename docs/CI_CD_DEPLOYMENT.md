@@ -36,7 +36,7 @@ ghcr.io/OWNER/lottopilot:sha-COMMIT
 
 ```text
 .github/workflows/ci.yml
-.github/workflows/docker.yml
+.github/workflows/ci.yml
 .github/workflows/manual-source-smoke.yml
 ```
 
@@ -46,7 +46,7 @@ ghcr.io/OWNER/lottopilot:sha-COMMIT
 2. Frontend：安装 Node、`npm ci`、lint、typecheck、test、build。
 3. Integration：启动 PostgreSQL service container，执行 migrations 和集成测试。
 
-`docker.yml`：
+`ci.yml`（image job）：
 
 1. `docker/setup-qemu-action`。
 2. `docker/setup-buildx-action`。

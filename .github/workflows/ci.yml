@@ -1,12 +1,19 @@
-name: ci
+name: CI
 
 on:
   push:
     branches: [main, master]
+    tags: ["v*"]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
-  offline-acceptance:
+  offline:
+    name: Offline checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,7 +30,8 @@ jobs:
         run: python scripts/validate_compose_static.py
 
   backend:
-    needs: [offline-acceptance]
+    name: Backend
+    needs: [offline]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -45,7 +53,8 @@ jobs:
         run: pytest -q
 
   frontend:
-    needs: [offline-acceptance]
+    name: Frontend
+    needs: [offline]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -64,11 +73,50 @@ jobs:
       - name: Test
         run: npm test
 
-  docker:
-    runs-on: ubuntu-latest
+  image:
+    name: Docker image
     needs: [backend, frontend]
-    if: github.event_name == 'push'
+    # Only build/push image on push to main/master or version tags (not on PR)
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build image
-        run: docker build -t lottopilot:ci .
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/lottopilot
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            APP_VERSION=${{ github.ref_name }}
+            APP_GIT_COMMIT=${{ github.sha }}

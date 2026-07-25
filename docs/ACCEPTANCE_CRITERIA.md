@@ -166,7 +166,7 @@
 | P8-03 | 宝塔说明 | `deploy/baota/README.md` 给出反代、升级与备份步骤 |
 | P8-04 | 备份恢复脚本 | 存在 `scripts/backup_pg.sh` / `scripts/restore_pg.sh` |
 | P8-05 | Release Notes | 存在 `docs/RELEASE_NOTES_v1.0.0.md` |
-| P8-06 | 多架构镜像流水线 | `.github/workflows/docker.yml` 定义 QEMU/Buildx 与 GHCR 推送 |
+| P8-06 | 多架构镜像流水线 | `.github/workflows/ci.yml` 定义 QEMU/Buildx 与 GHCR 推送 |
 | P8-07 | 生产 Compose 样例 | `deploy/baota/docker-compose.yml` 可用预构建镜像启动 |
 | P8-08 | 彩种目录 | `GET /lotteries` 返回 ssq/dlt 规则 |
 | P8-09 | 策略 API | `GET/POST /strategies` 可用 |
@@ -179,8 +179,8 @@
 | P8-16 | API 人工清单自动化 | `local_sqlite_e2e` 覆盖 9.2 可 API 化项：login/logout、复盘/导出、回测 summary、策略 set-default、AI 脱敏 CRUD、系统设置与权重上限拒绝、audit/jobs、ready(database=ok) |
 | P8-17 | Ready 分项语义 | `/system/ready` 将 DB ping 与 alembic_version 分离；缺迁移表时 database=ok、migrations=pending |
 | P8-18 | 真实进程全栈冒烟 | `scripts/local_fullstack_smoke.py` 启动 uvicorn+SQLite，验证 SPA/cookie/导入/推荐（非 TestClient，可选） |
-| P8-19 | GitHub Actions 门禁 | `ci.yml`：offline 三件套 + compose 静态校验 + backend(ruff/mypy/pytest) + frontend(build/test) + docker build |
-| P8-20 | GHCR 镜像发布 | `docker.yml` 多架构构建并推送 `ghcr.io/<owner>/lottopilot`（main→edge，tag→latest/版本） |
+| P8-19 | GitHub Actions 门禁 | 单一工作流 `ci.yml`：offline + backend + frontend +（push 时）Docker 镜像推 GHCR |
+| P8-20 | GHCR 镜像发布 | 同一 `CI` 工作流的 image job 多架构推送 `ghcr.io/<owner>/lottopilot`（main→edge，tag→latest/版本） |
 | P8-21 | 服务器 Compose 部署 | 使用 `deploy/baota/docker-compose.yml` 拉取镜像 + Postgres，完成 Setup 与核心人工 9.2 |
 | P7-13 | 主题单测 | `frontend/src/lib/theme-store.test.ts` 覆盖 localStorage 持久化与 toggle |
 | P0-07 | Lifespan 启动 | 应用使用 FastAPI lifespan 管理调度器启停，而非废弃 on_event |
@@ -213,7 +213,7 @@ npm test
 **离线门禁通过标准：** 上述三个 offline 脚本均 exit 0。  
 **本地 API 冒烟（无 Docker）：** `python scripts/local_api_smoke.py` → `LOCAL_API_SMOKE_OK`（需 backend venv 依赖；有 `frontend/dist` 时校验 SPA）。  
 **完整门禁通过标准：** GitHub Actions `ci.yml` 全绿（offline + backend + frontend + docker build）。  
-**镜像发布通过标准：** `docker.yml` 成功推送 GHCR。  
+**镜像发布通过标准：** `ci.yml`（image job） 成功推送 GHCR。  
 **生产通过标准：** 服务器 `docker compose` 健康 + 人工 9.2。
 
 ### 9.2 最低人工验收清单
@@ -255,7 +255,7 @@ npm test
 | 离线验收 | `scripts/check_structure.py`, `offline_acceptance.py`, `run_unit_offline.py` |
 | 本地 SQLite e2e | `scripts/local_sqlite_e2e.py`, `backend/tests/integration/test_sqlite_e2e.py`, `backend/app/db/types.py` |
 | 部署 | `Dockerfile`, `docker-compose.yml`, `deploy/baota/*`, `scripts/entrypoint.sh` |
-| CI/CD | `.github/workflows/ci.yml`, `.github/workflows/docker.yml` |
+| CI/CD | `.github/workflows/ci.yml` |
 | Compose 静态校验 | `scripts/validate_compose_static.py` |
 
 ---
@@ -268,7 +268,7 @@ npm test
 - Phase 0~5 完成定义通过  
 - Phase 6 的 P6-01/02/04/05/07 通过  
 - 质量门禁 9.1 中 **GitHub Actions ci.yml 全绿**（含 offline/backend/frontend/docker build）  
-- `docker.yml` 已产出可拉取的 GHCR 镜像  
+- `ci.yml`（image job） 已产出可拉取的 GHCR 镜像  
 - 服务器 Compose 健康检查通过  
 - 人工清单 9.2 全勾选  
 

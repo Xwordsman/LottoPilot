@@ -25,7 +25,7 @@
 | 根目录 `docker-compose.yml`（源码构建） | READY |
 | `deploy/baota/docker-compose.yml`（拉镜像） | READY |
 | `.github/workflows/ci.yml` | READY |
-| `.github/workflows/docker.yml`（QEMU/Buildx/GHCR） | READY |
+| `.github/workflows/ci.yml`（QEMU/Buildx/GHCR） | READY |
 | `.env.example` | READY |
 | 验收标准 v1.3（P8-19/20/21） | READY |
 
@@ -35,7 +35,7 @@
 
 ```text
 ci.yml     → offline + backend + frontend + docker build
-docker.yml → multi-arch push ghcr.io/<owner>/lottopilot
+ci.yml → multi-arch push ghcr.io/<owner>/lottopilot
 ```
 
 ### 4.2 服务器部署（人工）
