@@ -350,7 +350,7 @@ def main() -> int:
     check("frontend_alias_analysis", 'path="/analysis"' in router_src)
     check(
         "ticket_card_component",
-        (ROOT / "frontend" / "src" / "components" / "ui" / "TicketCard.tsx").exists(),
+        (ROOT / "frontend" / "src" / "components" / "ui" / "ticket-card.tsx").exists(),
     )
     from app.utils.lottery import format_ticket_line, next_issue_guess
     check("next_issue_utils", next_issue_guess("10") == "11")
@@ -395,7 +395,7 @@ def main() -> int:
     check("frontend_theme_store", "toggleTheme" in theme_store)
     shell = (ROOT / "frontend" / "src" / "components" / "layout" / "AppShell.tsx").read_text(encoding="utf-8")
     check("frontend_theme_toggle", "toggleTheme" in shell)
-    check("job_progress_component", (ROOT / "frontend" / "src" / "components" / "ui" / "JobProgress.tsx").exists())
+    check("job_progress_component", (ROOT / "frontend" / "src" / "components" / "ui" / "job-progress.tsx").exists())
     criteria = (ROOT / "docs" / "ACCEPTANCE_CRITERIA.md").read_text(encoding="utf-8")
     check("acceptance_theme_item", "P7-05" in criteria or "主题" in criteria)
 
@@ -413,8 +413,8 @@ def main() -> int:
     check("frontend_backtest_loading_error", "LoadingState" in bt_v7 and "ErrorState" in bt_v7)
     bt_api_v7 = (ROOT / "backend" / "app" / "api" / "v1" / "backtests.py").read_text(encoding="utf-8")
     check("api_backtest_cancel_route", "cancel" in bt_api_v7 and "BACKTEST_NOT_CANCELLABLE" in bt_api_v7)
-    check("loading_state_component", (ROOT / "frontend" / "src" / "components" / "ui" / "LoadingState.tsx").exists())
-    check("error_state_component", (ROOT / "frontend" / "src" / "components" / "ui" / "ErrorState.tsx").exists())
+    check("loading_state_component", (ROOT / "frontend" / "src" / "components" / "ui" / "loading-state.tsx").exists())
+    check("error_state_component", (ROOT / "frontend" / "src" / "components" / "ui" / "error-state.tsx").exists())
     jobs_v7 = (ROOT / "frontend" / "src" / "features" / "jobs" / "JobsPage.tsx").read_text(encoding="utf-8")
     check("frontend_jobs_loading_error", "LoadingState" in jobs_v7 and "ErrorState" in jobs_v7)
     analytics_v7 = (ROOT / "frontend" / "src" / "features" / "analytics" / "AnalyticsPage.tsx").read_text(encoding="utf-8")
@@ -460,7 +460,7 @@ def main() -> int:
         ROOT / "backend" / "app" / "services" / "ai" / "explain.py",
         ROOT / "backend" / "app" / "api" / "v1" / "ai.py",
         ROOT / "frontend" / "src" / "features" / "strategies" / "StrategiesPage.tsx",
-        ROOT / "frontend" / "src" / "components" / "ui" / "NumberBall.tsx",
+        ROOT / "frontend" / "src" / "components" / "ui" / "number-ball.tsx",
         ROOT / "scripts" / "run_unit_offline.py",
         ROOT / "docs" / "ACCEPTANCE_CRITERIA.md",
     ]

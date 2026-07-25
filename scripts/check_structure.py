@@ -36,9 +36,9 @@ def main() -> int:
         "frontend/src/features/analytics/AnalyticsPage.tsx","frontend/src/features/recommendations/RecommendationsPage.tsx",
         "frontend/src/features/backtests/BacktestsPage.tsx","frontend/src/features/settings/SettingsPage.tsx",
         "frontend/src/features/strategies/StrategiesPage.tsx","frontend/src/features/auth/DashboardPage.tsx",
-        "frontend/src/features/jobs/JobsPage.tsx","frontend/src/components/ui/NumberBall.tsx","frontend/src/components/ui/PageHeader.tsx",
-        "frontend/src/components/ui/LotterySwitcher.tsx","frontend/src/components/ui/EmptyState.tsx","frontend/src/components/ui/JobProgress.tsx",
-        "frontend/src/components/ui/TicketCard.tsx","frontend/src/components/ui/LoadingState.tsx","frontend/src/components/ui/ErrorState.tsx","frontend/src/lib/theme-store.ts","scripts/offline_acceptance.py","scripts/run_unit_offline.py","scripts/local_api_smoke.py","scripts/local_sqlite_e2e.py","scripts/local_fullstack_smoke.py",
+        "frontend/src/features/jobs/JobsPage.tsx","frontend/src/components/ui/number-ball.tsx","frontend/src/components/ui/page-header.tsx",
+        "frontend/src/components/ui/lottery-switcher.tsx","frontend/src/components/ui/empty-state.tsx","frontend/src/components/ui/job-progress.tsx",
+        "frontend/src/components/ui/ticket-card.tsx","frontend/src/components/ui/loading-state.tsx","frontend/src/components/ui/error-state.tsx","frontend/src/lib/theme-store.ts","scripts/offline_acceptance.py","scripts/run_unit_offline.py","scripts/local_api_smoke.py","scripts/local_sqlite_e2e.py","scripts/local_fullstack_smoke.py",
         "scripts/backup_pg.sh","scripts/restore_pg.sh","docs/RELEASE_NOTES_v1.0.0.md",".github/workflows/ci.yml",
         "deploy/baota/docker-compose.yml","backend/tests/fixtures/ssq_import_20.csv",".github/workflows/ci.yml",
     ]
