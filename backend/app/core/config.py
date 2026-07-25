@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     sync_cron_ssq: str = "0 22 * * 2,4,7"
     sync_cron_dlt: str = "5 21 * * 1,3,6"
     sync_enabled: bool = True
+    draw_data_source: str = "auto"  # auto|500com|official
 
     ai_default_timeout_seconds: int = 30
     ai_default_max_tokens: int = 1024

@@ -95,6 +95,7 @@ services:
       DATABASE_URL: postgresql+psycopg://lottopilot:change-me-db-password@postgres:5432/lottopilot
       TZ: Asia/Shanghai
       SYNC_ENABLED: "true"
+      DRAW_DATA_SOURCE: auto
     networks:
       - lottopilot
 
@@ -268,6 +269,7 @@ LottoPilot/
 | `POSTGRES_PASSWORD` | 数据库密码 | 强密码 |
 | `DATABASE_URL` | SQLAlchemy 连接串 | 与上面密码一致 |
 | `SYNC_ENABLED` | 是否启用定时同步 | `true` |
+| `DRAW_DATA_SOURCE` | 开奖数据源：`auto`（500彩票网优先，失败回退官方）/`500com`/`official` | `auto` |
 | `AI_WEIGHT_CAP` | AI 权重上限（≤0.10） | `0.10` |
 
 完整示例见 [`.env.example`](.env.example)（本地开发用）。

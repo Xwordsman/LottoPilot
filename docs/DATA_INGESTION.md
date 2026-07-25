@@ -163,3 +163,24 @@ lottery_type, issue, draw_date, primary_numbers, secondary_numbers
 - Parser 测试不得依赖实时网络。
 - 增加字段缺失、空列表、WAF HTML、乱码、重复期号和非法号码测试。
 - 网络 smoke test 单独标记，默认 CI 不执行实时官方请求。
+
+
+## 10. Third-party fallback (500.com)
+
+Cloud servers often cannot reach CWL/Sporttery APIs due to WAF/IP limits.
+LottoPilot therefore supports:
+
+| DRAW_DATA_SOURCE | Behavior |
+|---|---|
+| auto (default) | Try 500.com first, then official APIs |
+| 500com / 500 | Only datachart.500.com HTML history |
+| official | Only CWL (SSQ) / Sporttery (DLT) |
+
+500.com endpoint example:
+
+```text
+GET https://datachart.500.com/ssq/history/newinc/history.php?start=00001&end=99999
+GET https://datachart.500.com/dlt/history/newinc/history.php?start=00001&end=99999
+```
+
+SSQ issues from 500.com (`26084`) are normalized to official-like `2026084`.

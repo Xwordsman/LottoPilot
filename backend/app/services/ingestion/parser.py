@@ -191,3 +191,89 @@ def parse_dlt_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
             )
         )
     return records
+
+def _normalize_source_issue(lottery_type: str, issue: str) -> str:
+    """Normalize third-party issue codes to official-like formats."""
+    issue_text = str(issue).strip()
+    # 500.com SSQ uses YYNNN (e.g. 26084) while CWL uses YYYYNNN (2026084).
+    if lottery_type == "ssq" and re.fullmatch(r"\d{5}", issue_text):
+        return f"20{issue_text}"
+    return issue_text
+
+
+def parse_500_history_html(html: str, *, lottery_type: str) -> list[dict[str, Any]]:
+    """Parse 500.com history table HTML into normalized draw records."""
+    if lottery_type not in {"ssq", "dlt"}:
+        raise ValidationAppError("unsupported lottery", code="UNSUPPORTED_LOTTERY")
+
+    rows = re.findall(r'<tr[^>]*class="t_tr1"[^>]*>(.*?)</tr>', html, flags=re.I | re.S)
+    records: list[dict[str, Any]] = []
+    money_re = re.compile(r"^(?:\d{1,3}(?:,\d{3})+|\d{6,})$")
+    date_re = re.compile(r"^\d{4}[-/]\d{1,2}[-/]\d{1,2}$")
+
+    for row_html in rows:
+        cells = re.findall(r"<td[^>]*>(.*?)</td>", row_html, flags=re.I | re.S)
+        cleaned: list[str] = []
+        for cell in cells:
+            cell_text = re.sub(r"<[^>]+>", "", cell)
+            cell_text = cell_text.replace("\xa0", " ").replace("&nbsp;", " ").strip()
+            if cell_text and cell_text != "&nbsp;":
+                cleaned.append(cell_text)
+        if len(cleaned) < 8:
+            continue
+
+        issue_idx = next((i for i, token in enumerate(cleaned) if re.fullmatch(r"\d{5,10}", token)), None)
+        if issue_idx is None:
+            continue
+        issue = _normalize_source_issue(lottery_type, cleaned[issue_idx])
+
+        need = 7
+        nums: list[int] = []
+        cursor = issue_idx + 1
+        while cursor < len(cleaned) and len(nums) < need:
+            token = cleaned[cursor]
+            if re.fullmatch(r"\d{1,2}", token):
+                nums.append(int(token))
+                cursor += 1
+                continue
+            if nums:
+                break
+            cursor += 1
+        if len(nums) < need:
+            continue
+
+        if lottery_type == "ssq":
+            primary = nums[:6]
+            secondary = [nums[6]]
+        else:
+            primary = nums[:5]
+            secondary = nums[5:7]
+
+        draw_date = next((token for token in reversed(cleaned) if date_re.match(token)), None)
+        if draw_date is None:
+            continue
+
+        money_vals = [token for token in cleaned[cursor:] if money_re.match(token)]
+        pool = money_vals[0] if money_vals else None
+        sales = money_vals[-1] if len(money_vals) >= 2 else None
+
+        try:
+            records.append(
+                normalize_draw_record(
+                    lottery_type=lottery_type,
+                    issue=issue,
+                    draw_date=draw_date,
+                    primary_numbers=primary,
+                    secondary_numbers=secondary,
+                    sales_amount=sales,
+                    pool_amount=pool,
+                    prize_tiers=[],
+                    source_name="500com",
+                    source_url=f"https://datachart.500.com/{lottery_type}/history/history.shtml",
+                    raw_item={"cells": cleaned},
+                )
+            )
+        except ValidationAppError:
+            continue
+
+    return records

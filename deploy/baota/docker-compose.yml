@@ -35,6 +35,7 @@ services:
       DATABASE_URL: postgresql+psycopg://lottopilot:change-me-db-password@postgres:5432/lottopilot
       TZ: Asia/Shanghai
       SYNC_ENABLED: "true"
+      DRAW_DATA_SOURCE: auto
     networks:
       - lottopilot
 

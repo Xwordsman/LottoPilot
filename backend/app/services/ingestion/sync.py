@@ -118,6 +118,9 @@ async def run_sync_job(
             records = adapter.parse_page(payload)
             if not records:
                 break
+            chosen_source = getattr(adapter, "source_name", None)
+            if chosen_source and run.source_name != chosen_source:
+                run.source_name = chosen_source
 
             run.pages_processed += 1
             for record in records:
@@ -159,7 +162,8 @@ async def run_sync_job(
                 break
 
             page_no += 1
-            await _sleep_between_pages()
+            if not getattr(adapter, "local_pagination", False):
+                await _sleep_between_pages()
 
         if touched_issues:
             try:
