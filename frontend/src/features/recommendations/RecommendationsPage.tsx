@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,7 +10,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { LotterySwitcher } from "@/components/ui/lottery-switcher";
 import { PageHeader } from "@/components/ui/page-header";
-import { TicketCard } from "@/components/ui/ticket-card";
+import { RunPanel } from "@/components/recommendations/run-panel";
 import { apiRequest, ApiError } from "@/lib/api";
 import type { LotteryType } from "@/types/draws";
 import type { RecommendationList, RecommendationRun } from "@/types/recommendations";
@@ -23,17 +23,26 @@ export function RecommendationsPage() {
   const [targetIssue, setTargetIssue] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [active, setActive] = useState<RecommendationRun | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [freshRun, setFreshRun] = useState<RecommendationRun | null>(null);
 
   const listQuery = useQuery({
     queryKey: ["recommendations", lottery],
     queryFn: async () => {
       const res = await apiRequest<RecommendationList>(
-        `/recommendations?lottery_type=${lottery}&page=1&page_size=10`,
+        `/recommendations?lottery_type=${lottery}&page=1&page_size=20`,
       );
       return res.data!;
     },
   });
+
+  const runs = useMemo(() => {
+    const items = listQuery.data?.items ?? [];
+    if (freshRun && !items.some((r) => r.id === freshRun.id)) {
+      return [freshRun, ...items];
+    }
+    return items.map((r) => (freshRun && r.id === freshRun.id ? freshRun : r));
+  }, [listQuery.data?.items, freshRun]);
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -55,7 +64,8 @@ export function RecommendationsPage() {
       setMessage(
         `已生成 ${data.lottery_type.toUpperCase()} 推荐，目标期 ${data.target_issue ?? "-"}，seed ${data.seed ?? "-"}，AI ${data.ai_status}`,
       );
-      setActive(data);
+      setFreshRun(data);
+      setActiveId(data.id);
       void queryClient.invalidateQueries({ queryKey: ["recommendations"] });
     },
     onError: (err: unknown) => {
@@ -77,7 +87,8 @@ export function RecommendationsPage() {
       const bestP = data.summary.best_primary_hits ?? "-";
       const bestS = data.summary.best_secondary_hits ?? "-";
       setMessage(`复盘完成：最佳命中 主区 ${bestP} / 次区 ${bestS}`);
-      setActive(data.run);
+      setFreshRun(data.run);
+      setActiveId(data.run.id);
       void queryClient.invalidateQueries({ queryKey: ["recommendations"] });
     },
     onError: (err: unknown) => {
@@ -96,7 +107,8 @@ export function RecommendationsPage() {
     onSuccess: (data) => {
       setError(null);
       setMessage(`已重新生成 ${data.tickets?.length ?? 0} 条统计解释`);
-      setActive(data);
+      setFreshRun(data);
+      setActiveId(data.id);
       void queryClient.invalidateQueries({ queryKey: ["recommendations"] });
     },
     onError: (err: unknown) => {
@@ -105,12 +117,9 @@ export function RecommendationsPage() {
     },
   });
 
-  const current = active ?? listQuery.data?.items?.[0] ?? null;
-
-  async function exportRun(fmt: "json" | "csv") {
-    if (!current) return;
+  async function exportRun(run: RecommendationRun, fmt: "json" | "csv") {
     try {
-      const res = await fetch(`/api/v1/recommendations/${current.id}/export?fmt=${fmt}`, {
+      const res = await fetch(`/api/v1/recommendations/${run.id}/export?fmt=${fmt}`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error("export failed");
@@ -118,7 +127,7 @@ export function RecommendationsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `lottopilot-${current.lottery_type}-${current.target_issue ?? current.id}.${fmt}`;
+      a.download = `lottopilot-${run.lottery_type}-${run.target_issue ?? run.id}.${fmt}`;
       a.click();
       URL.revokeObjectURL(url);
       setMessage(`已导出 ${fmt.toUpperCase()}`);
@@ -132,139 +141,79 @@ export function RecommendationsPage() {
     <div className="space-y-6">
       <PageHeader
         title="推荐记录"
-        description="可指定 seed / 目标期复现推荐。分数为模型评分，不承诺中奖。"
+        description="每期推荐可折叠展开；支持单注复制与一键复制该目标期内全部号码。"
         actions={<LotterySwitcher value={lottery} onChange={setLottery} />}
       />
 
       <Card>
-      <CardContent className="space-y-4 px-6">
-        <div className="grid gap-3 md:grid-cols-4">
-          <label className="space-y-1 text-sm">
-            <span>目标期（可选）</span>
-            <input
-              className="w-full rounded-xl border border-input bg-background px-3 py-2"
-              value={targetIssue}
-              onChange={(e) => setTargetIssue(e.target.value)}
-              placeholder="默认自动推断下一期"
-            />
-          </label>
-          <label className="space-y-1 text-sm">
-            <span>Seed（可选）</span>
-            <input
-              type="number"
-              className="w-full rounded-xl border border-input bg-background px-3 py-2"
-              value={seed}
-              onChange={(e) => setSeed(e.target.value)}
-              placeholder="固定 seed 可复现"
-            />
-          </label>
-          <label className="inline-flex items-end gap-2 text-sm text-foreground pb-2">
-            <input
-              type="checkbox"
-              checked={enableAi}
-              onChange={(e) => setEnableAi(e.target.checked)}
-            />
-            启用 AI
-          </label>
-          <div className="flex items-end">
-            <Button
-              className="w-full"
-              onClick={() => createMutation.mutate()}
-              disabled={createMutation.isPending}
-            >
-              {createMutation.isPending ? "生成中..." : "生成 5 组推荐"}
-            </Button>
+        <CardContent className="space-y-4 px-6 pt-6">
+          <div className="grid gap-3 md:grid-cols-4">
+            <label className="space-y-1 text-sm">
+              <span>目标期（可选）</span>
+              <input
+                className="w-full rounded-xl border border-input bg-background px-3 py-2"
+                value={targetIssue}
+                onChange={(e) => setTargetIssue(e.target.value)}
+                placeholder="留空自动下一期"
+              />
+            </label>
+            <label className="space-y-1 text-sm">
+              <span>Seed（可选）</span>
+              <input
+                type="number"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2"
+                value={seed}
+                onChange={(e) => setSeed(e.target.value)}
+                placeholder="固定 seed 可复现"
+              />
+            </label>
+            <label className="inline-flex items-end gap-2 text-sm text-foreground pb-2">
+              <input type="checkbox" checked={enableAi} onChange={(e) => setEnableAi(e.target.checked)} />
+              启用 AI
+            </label>
+            <div className="flex items-end">
+              <Button className="w-full" onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
+                {createMutation.isPending ? "生成中..." : "生成 5 组推荐"}
+              </Button>
+            </div>
           </div>
-        </div>
-        {message ? <div className="mt-3 text-sm text-primary">{message}</div> : null}
-        {error ? <div className="mt-3 text-sm text-destructive">{error}</div> : null}
-      </CardContent>
-    </Card>
+          {message ? <div className="text-sm text-primary">{message}</div> : null}
+          {error ? <div className="text-sm text-destructive">{error}</div> : null}
+        </CardContent>
+      </Card>
 
       {listQuery.isLoading ? <LoadingState label="加载推荐记录..." /> : null}
       {listQuery.isError ? (
-        <ErrorState
-          title="推荐列表加载失败"
-          description="请检查登录状态或稍后重试。"
-          onRetry={() => void listQuery.refetch()}
-        />
+        <ErrorState title="推荐列表加载失败" description="请检查登录状态或稍后重试。" onRetry={() => void listQuery.refetch()} />
       ) : null}
 
-      {current ? (
-        <Card>
-      <CardContent className="space-y-4 px-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-medium">
-                {current.lottery_type.toUpperCase()} · 目标期 {current.target_issue ?? "—"}
-              </h2>
-              <div className="mt-1 text-sm text-muted-foreground">
-                seed {current.seed ?? "—"} · snapshot {current.data_snapshot_hash?.slice(0, 10) ?? "—"} · AI{" "}
-                {current.ai_status}
-                {current.evaluation
-                  ? ` · 复盘命中 ${current.evaluation.best_primary_hits ?? "-"}+${current.evaluation.best_secondary_hits ?? "-"}`
-                  : ""}
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => evaluateMutation.mutate(current.id)}
-                disabled={evaluateMutation.isPending}
-              >
-                {evaluateMutation.isPending ? "复盘中..." : "手动复盘"}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => explainMutation.mutate(current.id)}
-                disabled={explainMutation.isPending}
-              >
-                {explainMutation.isPending ? "解释生成中..." : "重生成解释"}
-              </Button>
-              <Button variant="secondary" onClick={() => void exportRun("json")}>
-                导出 JSON
-              </Button>
-              <Button variant="secondary" onClick={() => void exportRun("csv")}>
-                导出 CSV
-              </Button>
-            </div>
-          </div>
+      {!listQuery.isLoading && !listQuery.isError && runs.length ? (
+        <div className="space-y-3">
+          {runs.map((run, idx) => (
+            <RunPanel
+              key={run.id}
+              run={run}
+              defaultOpen={activeId ? run.id === activeId : idx === 0}
+              actions={
+                <>
+                  <Button variant="secondary" size="sm" onClick={() => { setActiveId(run.id); evaluateMutation.mutate(run.id); }} disabled={evaluateMutation.isPending}>
+                    {evaluateMutation.isPending ? "复盘中..." : "手动复盘"}
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => { setActiveId(run.id); explainMutation.mutate(run.id); }} disabled={explainMutation.isPending}>
+                    {explainMutation.isPending ? "解释中..." : "重生成解释"}
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => void exportRun(run, "json")}>导出 JSON</Button>
+                  <Button variant="secondary" size="sm" onClick={() => void exportRun(run, "csv")}>导出 CSV</Button>
+                </>
+              }
+            />
+          ))}
+        </div>
+      ) : null}
 
-          <div className="mt-5 space-y-3">
-            {(current.tickets ?? []).map((ticket) => (
-              <TicketCard key={ticket.id} ticket={ticket} />
-            ))}
-            <p className="text-xs text-muted-foreground">模型评分/历史分析，不承诺中奖。</p>
-          </div>
-        </CardContent>
-    </Card>
-      ) : !listQuery.isLoading && !listQuery.isError ? (
+      {!listQuery.isLoading && !listQuery.isError && !runs.length ? (
         <EmptyState title="还没有推荐记录" description="请先同步开奖数据，再生成推荐。" />
       ) : null}
-
-      <Card>
-      <CardContent className="space-y-4 px-6">
-        <h2 className="text-lg font-medium">历史推荐</h2>
-        <div className="mt-3 space-y-2 text-sm">
-          {(listQuery.data?.items ?? []).map((run) => (
-            <button
-              key={run.id}
-              className="flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left hover:bg-secondary/50"
-              onClick={() => setActive(run)}
-            >
-              <span>
-                {run.lottery_type.toUpperCase()} · {run.target_issue ?? "—"} · seed {run.seed ?? "—"} · AI{" "}
-                {run.ai_status}
-              </span>
-              <span className="text-muted-foreground">{new Date(run.created_at).toLocaleString()}</span>
-            </button>
-          ))}
-          {!listQuery.data?.items?.length ? (
-            <div className="text-muted-foreground">暂无历史。</div>
-          ) : null}
-        </div>
-      </CardContent>
-    </Card>
     </div>
   );
 }

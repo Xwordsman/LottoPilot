@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label"
 import { LoadingState } from "@/components/ui/loading-state"
 import { LotterySwitcher } from "@/components/ui/lottery-switcher"
 import { PageHeader } from "@/components/ui/page-header"
-import { TicketCard } from "@/components/ui/ticket-card"
+import { RunPanel } from "@/components/recommendations/run-panel"
 import { apiRequest, ApiError } from "@/lib/api"
 import { useAuthStore } from "@/lib/auth-store"
 import type { SystemInfo } from "@/types/api"
@@ -48,7 +48,7 @@ export function DashboardPage() {
     queryKey: ["recommendations", "dashboard", lottery],
     queryFn: async () => {
       const res = await apiRequest<RecommendationList>(
-        `/recommendations?lottery_type=${lottery}&page=1&page_size=1`
+        `/recommendations?lottery_type=${lottery}&page=1&page_size=8`
       )
       return res.data!
     },
@@ -185,16 +185,10 @@ export function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            {current
-              ? `${current.lottery_type.toUpperCase()} · 目标期 ${current.target_issue ?? "—"}`
-              : "候选组合"}
-          </CardTitle>
-          {current ? (
-            <CardDescription>
-              seed {current.seed ?? "—"} · AI {current.ai_status}
-            </CardDescription>
-          ) : null}
+                    <CardTitle>候选组合</CardTitle>
+          <CardDescription>
+            每一期可折叠展开；支持单注复制，以及一键复制该目标期内全部号码。
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {recQuery.isLoading ? <LoadingState label="加载最近推荐..." /> : null}
@@ -205,14 +199,18 @@ export function DashboardPage() {
               onRetry={() => void recQuery.refetch()}
             />
           ) : null}
-          {!recQuery.isLoading && !recQuery.isError && current ? (
+          {!recQuery.isLoading && !recQuery.isError && (generated || (recQuery.data?.items?.length ?? 0) > 0) ? (
             <div className="space-y-3">
-              {(current.tickets ?? []).slice(0, 5).map((ticket) => (
-                <TicketCard key={ticket.id} ticket={ticket} />
-              ))}
-              <p className="text-xs text-muted-foreground">
-                模型评分/历史分析，不承诺中奖。
-              </p>
+              {generated ? <RunPanel key={generated.id} run={generated} defaultOpen /> : null}
+              {(recQuery.data?.items ?? [])
+                .filter((run) => !generated || run.id !== generated.id)
+                .map((run, idx) => (
+                  <RunPanel
+                    key={run.id}
+                    run={run}
+                    defaultOpen={!generated && idx === 0}
+                  />
+                ))}
             </div>
           ) : null}
           {!recQuery.isLoading && !recQuery.isError && !current ? (
