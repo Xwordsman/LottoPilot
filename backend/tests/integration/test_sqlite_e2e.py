@@ -5,12 +5,12 @@ No PostgreSQL/Docker required. Uses portable column types and create_all.
 
 from __future__ import annotations
 
-import csv
 from collections.abc import Iterator
 from pathlib import Path
+import csv
 
-import pytest
 from fastapi.testclient import TestClient
+import pytest
 
 ROOT = Path(__file__).resolve().parents[3]
 FIXTURE_CSV = ROOT / "backend" / "tests" / "fixtures" / "ssq_import_20.csv"

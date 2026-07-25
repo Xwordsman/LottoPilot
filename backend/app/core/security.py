@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 import hashlib
 import hmac
 import secrets
-from base64 import urlsafe_b64decode, urlsafe_b64encode
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any
 from uuid import UUID
+import json
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from typing import Sequence
 import hashlib
 import random
-from typing import Sequence
 
 
 def derive_seed(lottery_type: str, target_issue: str, strategy_version: str) -> int:

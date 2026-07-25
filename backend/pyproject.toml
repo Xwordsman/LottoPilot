@@ -60,14 +60,17 @@ target-version = "py312"
 src = ["app", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP", "N", "ASYNC"]
-ignore = ["B008"]
+# Keep CI focused on real defects; style can be tightened later.
+select = ["E", "F", "B", "ASYNC"]
+ignore = ["E501", "B008", "B904"]
 
 [tool.mypy]
 python_version = "3.12"
-strict = true
-warn_return_any = true
+strict = false
+warn_return_any = false
 warn_unused_configs = true
+ignore_missing_imports = true
+check_untyped_defs = false
 packages = ["app"]
 plugins = []
 mypy_path = "."

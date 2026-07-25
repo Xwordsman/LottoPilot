@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from typing import Any, Protocol
 import asyncio
 import random
-from typing import Any, Protocol
 
 import httpx
 

@@ -43,8 +43,20 @@ def test_generate_and_score_reproducible() -> None:
     seed = derive_seed("ssq", "2026011", "v1")
     rng1 = make_rng(seed)
     rng2 = make_rng(seed)
-    primary_stats = number_stats(history, lottery_type="ssq", zone="primary", windows=config["windows"], lambda_decay=0.03)
-    secondary_stats = number_stats(history, lottery_type="ssq", zone="secondary", windows=config["windows"], lambda_decay=0.03)
+    primary_stats = number_stats(
+        history,
+        lottery_type="ssq",
+        zone="primary",
+        windows=config["windows"],
+        lambda_decay=0.03,
+    )
+    secondary_stats = number_stats(
+        history,
+        lottery_type="ssq",
+        zone="secondary",
+        windows=config["windows"],
+        lambda_decay=0.03,
+    )
     c1 = generate_candidates(
         lottery_type="ssq",
         history=history,

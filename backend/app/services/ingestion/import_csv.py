@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
 import csv
 import io
 import re
-from typing import TYPE_CHECKING, Any
 
 from app.core.errors import ValidationAppError
 from app.services.ingestion.parser import normalize_draw_record

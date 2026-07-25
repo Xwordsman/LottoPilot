@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import time
 from typing import Any
 from uuid import UUID
+import time
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session

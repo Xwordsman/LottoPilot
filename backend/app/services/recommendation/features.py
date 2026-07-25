@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import math
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date
 from typing import Any, Iterable
+import math
 
 from app.core.constants import LOTTERY_RULES
 

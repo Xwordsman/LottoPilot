@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+
 from unittest.mock import patch
 
 from app.services.ai.rerank import apply_ai_rerank

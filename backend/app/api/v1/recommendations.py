@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import math
 from uuid import UUID
+import math
 
 from fastapi import APIRouter, Query
 from fastapi.responses import Response
@@ -21,9 +21,9 @@ from app.schemas.recommendations import (
     RecommendationRunPublic,
     RecommendationTicketPublic,
 )
+from app.services.ai.explain import build_statistical_explanation
 from app.services.recommendation.engine import run_recommendation
 from app.services.recommendation.evaluate import build_run_export, evaluate_recommendation_run
-from app.services.ai.explain import build_statistical_explanation
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 

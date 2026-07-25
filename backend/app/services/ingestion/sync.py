@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import asyncio
-import random
 from datetime import date
 from typing import Any, Literal
 from uuid import UUID
+import asyncio
+import random
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -15,8 +15,8 @@ from app.core.errors import AppError
 from app.models.draw import Draw, IngestionError, IngestionRun
 from app.models.system import Job
 from app.services.ingestion.adapters import get_adapter
-from app.services.recommendation.evaluate import evaluate_recent_upserts
 from app.services.jobs import mark_job_failed, mark_job_running, mark_job_succeeded, update_job_progress
+from app.services.recommendation.evaluate import evaluate_recent_upserts
 from app.utils.time import utcnow
 
 SyncMode = Literal["incremental", "full"]

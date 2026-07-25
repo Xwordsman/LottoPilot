@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import math
 from uuid import UUID
+import math
 
 from fastapi import APIRouter, Query
 from sqlalchemy import func, select, text

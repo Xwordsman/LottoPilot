@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from typing import Any
 import itertools
 import math
-from typing import Any
 
 from app.core.constants import LOTTERY_RULES
 from app.services.recommendation.features import HistoryDraw

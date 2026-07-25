@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+from uuid import UUID
 import csv
 import io
 import json
 import math
-from uuid import UUID
 
 from fastapi import APIRouter, Query
 from fastapi.responses import Response

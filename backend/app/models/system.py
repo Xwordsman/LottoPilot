@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-import uuid
 from datetime import datetime
 from typing import Any
+import uuid
 
 from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, Text, func
-from app.db.types import GUID, JSONDoc
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.session import Base
+from app.db.types import GUID, JSONDoc
 
 
 class AppSetting(Base):

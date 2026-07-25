@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import math
 from typing import Any
 from uuid import UUID
+import math
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field

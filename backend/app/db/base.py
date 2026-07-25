@@ -1,13 +1,13 @@
 """Import all models so Alembic and metadata see them."""
 
-from app.models.user import User, UserSession
-from app.models.system import AppSetting, AuditLog, Job
-from app.models.draw import Draw, IngestionError, IngestionRun
-from app.models.strategy import StrategyProfile
-from app.models.recommendation import RecommendationResult, RecommendationRun, RecommendationTicket
-from app.models.backtest import BacktestIssueResult, BacktestRun
 from app.models.ai import AIConfig
+from app.models.backtest import BacktestIssueResult, BacktestRun
+from app.models.draw import Draw, IngestionError, IngestionRun
 from app.models.prize import PrizeRuleSet
+from app.models.recommendation import RecommendationResult, RecommendationRun, RecommendationTicket
+from app.models.strategy import StrategyProfile
+from app.models.system import AppSetting, AuditLog, Job
+from app.models.user import User, UserSession
 
 __all__ = [
     "User",

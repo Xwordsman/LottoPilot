@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Any, Protocol
 import hashlib
 import json
 import time
-from dataclasses import dataclass
-from typing import Any, Protocol
 
 import httpx
 
