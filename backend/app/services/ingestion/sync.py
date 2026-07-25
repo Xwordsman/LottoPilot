@@ -15,6 +15,7 @@ from app.core.errors import AppError
 from app.models.draw import Draw, IngestionError, IngestionRun
 from app.models.system import Job
 from app.services.ingestion.adapters import get_adapter
+from app.services.recommendation.auto_hit_optimize import clear_auto_hit_cache
 from app.services.jobs import mark_job_failed, mark_job_running, mark_job_succeeded, update_job_progress
 from app.services.recommendation.evaluate import evaluate_recent_upserts
 from app.utils.time import utcnow
@@ -172,6 +173,7 @@ async def run_sync_job(
                 db.rollback()
         run.status = "succeeded"
         run.finished_at = utcnow()
+        clear_auto_hit_cache(lottery_type)
         mark_job_succeeded(db, job)
         db.add(run)
         db.commit()

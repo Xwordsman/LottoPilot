@@ -7,6 +7,7 @@ from typing import Any
 
 DEFAULT_STRATEGY_CONFIG: dict[str, Any] = {
     "version": "v1",
+    "auto_hit_optimize": True,
     "candidate_count": 20000,
     "final_count": 5,
     "windows": [30, 60, 120, 0],  # 0 means full history

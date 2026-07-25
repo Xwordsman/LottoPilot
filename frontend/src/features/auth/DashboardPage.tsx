@@ -70,7 +70,10 @@ export function DashboardPage() {
     onSuccess: (data) => {
       setError(null)
       setMessage(
-        `已生成 ${data.lottery_type.toUpperCase()} 5 组候选，目标期 ${data.target_issue ?? "-"}，AI ${data.ai_status}`
+        `已生成 ${data.lottery_type.toUpperCase()} 5 组候选，目标期 ${data.target_issue ?? "-"}，AI ${data.ai_status}` +
+          ((data.metrics as Record<string, any>)?.auto_hit?.selected_variant
+            ? `，自动优选 ${(data.metrics as Record<string, any>).auto_hit.selected_variant}`
+            : "")
       )
       setGenerated(data)
       void queryClient.invalidateQueries({ queryKey: ["recommendations"] })
@@ -132,7 +135,7 @@ export function DashboardPage() {
         <CardHeader>
           <CardTitle>生成 5 组候选</CardTitle>
           <CardDescription>
-            无 AI Key 时仍可纯统计生成。AI 仅做 ≤10% 有限重排/解释，失败自动降级。
+            点击后系统自动按近期历史命中表现优选策略并生成 5 组。AI 仅做 ≤10% 辅助，失败自动降级；不承诺中奖。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

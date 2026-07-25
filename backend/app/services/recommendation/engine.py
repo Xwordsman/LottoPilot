@@ -23,6 +23,7 @@ from app.services.recommendation.features import (
 )
 from app.services.recommendation.scoring import score_candidate, select_diverse
 from app.services.recommendation.seed import derive_seed, make_rng, normalize_seed, snapshot_hash
+from app.services.recommendation.auto_hit_optimize import get_auto_hit_config
 from app.services.recommendation.strategy import merge_strategy_config
 from app.utils.lottery import next_issue_guess
 from app.utils.time import utcnow
@@ -99,14 +100,34 @@ def run_recommendation(
     else:
         profile = ensure_default_strategy(db, lottery_type)
 
-    config = merge_strategy_config(profile.config if isinstance(profile.config, dict) else None)
+    base_config = merge_strategy_config(profile.config if isinstance(profile.config, dict) else None)
     if candidate_count:
-        config["candidate_count"] = int(candidate_count)
+        base_config["candidate_count"] = int(candidate_count)
 
     latest_issue = history[0].issue
     target = target_issue or next_issue_guess(latest_issue)
     used_seed = normalize_seed(seed if seed is not None else derive_seed(lottery_type, target, profile.version))
     rng = make_rng(used_seed)
+
+    # Automatic historical-hit oriented config selection.
+    # Explicit custom strategy_profile_id still benefits from auto search on top of its base
+    # weights unless profile.config disables it with auto_hit_optimize=false.
+    auto_meta: dict = {"mode": "auto_hit", "status": "disabled"}
+    profile_cfg = profile.config if isinstance(profile.config, dict) else {}
+    auto_enabled = bool(profile_cfg.get("auto_hit_optimize", True))
+    if auto_enabled:
+        auto_result = get_auto_hit_config(
+            lottery_type=lottery_type,
+            history_newest_first=history,
+            base_config=base_config,
+            seed=used_seed,
+        )
+        config = auto_result.config
+        auto_meta = auto_result.meta
+        if candidate_count:
+            config["candidate_count"] = int(candidate_count)
+    else:
+        config = base_config
 
     snap = snapshot_hash(
         [
@@ -258,6 +279,8 @@ def run_recommendation(
             "strategy_version": profile.version,
             "ai_weight": ai_meta.get("ai_weight", 0.0),
             "ai_status": run.ai_status,
+            "auto_hit": auto_meta,
+            "optimization_goal": "historical_hit_proxy_max",
         }
         mark_job_succeeded(db, job)
         db.add(run)

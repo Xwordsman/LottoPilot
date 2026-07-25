@@ -230,3 +230,12 @@ training_data = draws where draw_date < target.draw_date
 5. 人工确认后把 `is_default` 切换到新版本。
 
 回测表现不足时仍可保存为实验策略，不覆盖当前默认配置。
+
+
+## Auto hit optimization
+
+On each generate click, LottoPilot automatically walk-forward evaluates a small strategy grid on recent history and uses the best historical hit/prize-proxy config for the current 5 tickets.
+
+- Goal: maximize historical hit/prize proxy for the selected 5 tickets
+- User action: only click generate
+- This is not a claim of higher true winning odds
