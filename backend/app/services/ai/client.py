@@ -21,7 +21,6 @@ __all__ = [
     "decrypt_api_key",
     "public_key_mask",
     "response_hash",
-    "apply_ai_rerank",
 ]
 
 
