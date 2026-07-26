@@ -12,6 +12,7 @@ import {
 import { NumberBall } from "@/components/ui/number-ball";
 import { Separator } from "@/components/ui/separator";
 import { copyText } from "@/lib/clipboard";
+import { translateTag } from "@/lib/labels";
 import { formatTicketLine } from "@/lib/ticket-format";
 import type { RecommendationTicket } from "@/types/recommendations";
 
@@ -27,7 +28,7 @@ function tagList(tags: RecommendationTicket["tags"]): string[] {
 export function TicketCard({ ticket }: { ticket: RecommendationTicket }) {
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
-  const labels = tagList(ticket.tags);
+  const labels = tagList(ticket.tags).map(translateTag);
   const line = formatTicketLine(ticket);
 
   async function copy() {
@@ -50,11 +51,11 @@ export function TicketCard({ ticket }: { ticket: RecommendationTicket }) {
           <div className="space-y-1">
             <CardTitle className="text-base">第 {ticket.rank} 组</CardTitle>
             <CardDescription>
-              统计 {Number(ticket.statistical_score).toFixed(1)}
+              统计分 {Number(ticket.statistical_score).toFixed(1)}
               {ticket.ai_score != null
-                ? ` · AI ${Number(ticket.ai_score).toFixed(1)}`
+                ? ` · AI分 ${Number(ticket.ai_score).toFixed(1)}`
                 : ""}
-              {" · "}最终 {Number(ticket.final_score).toFixed(1)}
+              {" · "}综合分 {Number(ticket.final_score).toFixed(1)}
               {ticket.primary_hits != null
                 ? ` · 命中 ${ticket.primary_hits}+${ticket.secondary_hits ?? 0}`
                 : ""}
@@ -62,7 +63,7 @@ export function TicketCard({ ticket }: { ticket: RecommendationTicket }) {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="secondary">#{ticket.rank}</Badge>
+            <Badge variant="secondary">第{ticket.rank}组</Badge>
             <Button
               type="button"
               variant="outline"

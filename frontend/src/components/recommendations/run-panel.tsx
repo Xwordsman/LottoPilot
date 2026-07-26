@@ -1,5 +1,5 @@
-import { Check, ChevronDown, ChevronRight, Copy } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { Check, ChevronDown, ChevronRight, Copy, Trash2 } from "lucide-react";
+import { useMemo, useState, type MouseEvent, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { TicketCard } from "@/components/ui/ticket-card";
 import { copyText } from "@/lib/clipboard";
+import { aiStatusLabel, lotteryLabel } from "@/lib/labels";
 import { formatRunTickets } from "@/lib/ticket-format";
 import { cn } from "@/lib/utils";
 import type { RecommendationRun } from "@/types/recommendations";
@@ -20,6 +21,8 @@ type RunPanelProps = {
   defaultOpen?: boolean;
   actions?: ReactNode;
   className?: string;
+  onDelete?: (runId: string) => void;
+  deleting?: boolean;
 };
 
 export function RunPanel({
@@ -27,12 +30,14 @@ export function RunPanel({
   defaultOpen = true,
   actions,
   className,
+  onDelete,
+  deleting = false,
 }: RunPanelProps) {
   const [open, setOpen] = useState(defaultOpen);
   const [copiedAll, setCopiedAll] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
 
-  const title = `${run.lottery_type.toUpperCase()} · 目标期 ${run.target_issue ?? "—"}`;
+  const title = `${lotteryLabel(run.lottery_type)} · 目标期 ${run.target_issue ?? "—"}`;
   const ticketCount = run.tickets?.length ?? 0;
   const allText = useMemo(() => formatRunTickets(run), [run]);
 
@@ -46,6 +51,15 @@ export function RunPanel({
     setCopyError(null);
     setCopiedAll(true);
     window.setTimeout(() => setCopiedAll(false), 1600);
+  }
+
+  function handleDelete(e: MouseEvent) {
+    e.stopPropagation();
+    if (!onDelete) return;
+    const ok = window.confirm(
+      `确认删除「${lotteryLabel(run.lottery_type)} · 目标期 ${run.target_issue ?? "—"}」这期推荐？删除后不可恢复。`,
+    );
+    if (ok) onDelete(run.id);
   }
 
   return (
@@ -64,10 +78,10 @@ export function RunPanel({
             <span className="min-w-0 space-y-1">
               <CardTitle className="text-base sm:text-lg">{title}</CardTitle>
               <CardDescription>
-                seed {run.seed ?? "—"} · AI {run.ai_status}
+                复现编号 {run.seed ?? "自动"} · {aiStatusLabel(run.ai_status)}
                 {ticketCount ? ` · ${ticketCount} 组` : ""}
                 {run.evaluation
-                  ? ` · 复盘 ${run.evaluation.best_primary_hits ?? "-"}+${
+                  ? ` · 复盘命中 ${run.evaluation.best_primary_hits ?? "-"}+${
                       run.evaluation.best_secondary_hits ?? "-"
                     }`
                   : ""}
@@ -88,6 +102,19 @@ export function RunPanel({
               {copiedAll ? <Check className="size-4" /> : <Copy className="size-4" />}
               {copiedAll ? "已复制全部" : "复制本期全部"}
             </Button>
+            {onDelete ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-destructive"
+                disabled={deleting}
+                onClick={handleDelete}
+              >
+                <Trash2 className="size-4" />
+                {deleting ? "删除中..." : "删除本期"}
+              </Button>
+            ) : null}
             {actions}
             <Button type="button" variant="outline" size="sm" onClick={() => setOpen((v) => !v)}>
               {open ? "收起" : "展开"}
@@ -105,7 +132,7 @@ export function RunPanel({
             .map((ticket) => (
               <TicketCard key={ticket.id} ticket={ticket} />
             ))}
-          <p className="text-xs text-muted-foreground">模型评分/历史分析，不承诺中奖。</p>
+          <p className="text-xs text-muted-foreground">以上为模型评分与历史分析，不承诺中奖。</p>
         </CardContent>
       ) : null}
     </Card>

@@ -14,6 +14,7 @@ from app.api.deps import CurrentUserDep, DbSession, RequestIdDep
 from app.api.response import success_response
 from app.core.errors import NotFoundError
 from app.models.recommendation import RecommendationResult, RecommendationRun
+from app.models.system import Job
 from app.schemas.recommendations import (
     RecommendationCreateRequest,
     RecommendationEvaluationSummary,
@@ -167,6 +168,29 @@ def get_recommendation(
     if run is None:
         raise NotFoundError("推荐记录不存在")
     return success_response(_run_to_public(db, run).model_dump(mode="json"), request_id)
+
+
+
+
+@router.delete("/{run_id}")
+def delete_recommendation(
+    run_id: UUID,
+    db: DbSession,
+    user: CurrentUserDep,
+    request_id: RequestIdDep,
+):
+    """Delete one recommendation run and its tickets/results."""
+    run = db.get(RecommendationRun, run_id)
+    if run is None:
+        raise NotFoundError("推荐记录不存在")
+    job_id = run.job_id
+    db.delete(run)
+    job = db.get(Job, job_id)
+    if job is not None:
+        db.delete(job)
+    db.commit()
+    return success_response({"deleted": True, "id": str(run_id)}, request_id)
+
 
 
 @router.post("/{run_id}/evaluate")

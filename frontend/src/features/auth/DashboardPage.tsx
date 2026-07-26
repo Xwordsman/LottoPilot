@@ -22,6 +22,7 @@ import { PageHeader } from "@/components/ui/page-header"
 import { RunPanel } from "@/components/recommendations/run-panel"
 import { apiRequest, ApiError } from "@/lib/api"
 import { useAuthStore } from "@/lib/auth-store"
+import { aiStatusLabel, lotteryLabel } from "@/lib/labels"
 import type { SystemInfo } from "@/types/api"
 import type { LotteryType } from "@/types/draws"
 import type { RecommendationList, RecommendationRun } from "@/types/recommendations"
@@ -32,9 +33,11 @@ export function DashboardPage() {
   const [lottery, setLottery] = useState<LotteryType>("ssq")
   const [enableAi, setEnableAi] = useState(true)
   const [seed, setSeed] = useState("")
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [generated, setGenerated] = useState<RecommendationRun | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const infoQuery = useQuery({
     queryKey: ["system-info"],
@@ -48,7 +51,7 @@ export function DashboardPage() {
     queryKey: ["recommendations", "dashboard", lottery],
     queryFn: async () => {
       const res = await apiRequest<RecommendationList>(
-        `/recommendations?lottery_type=${lottery}&page=1&page_size=8`
+        `/recommendations?lottery_type=${lottery}&page=1&page_size=8`,
       )
       return res.data!
     },
@@ -69,11 +72,10 @@ export function DashboardPage() {
     },
     onSuccess: (data) => {
       setError(null)
+      const variant = (data.metrics as Record<string, any>)?.auto_hit?.selected_variant
       setMessage(
-        `已生成 ${data.lottery_type.toUpperCase()} 5 组候选，目标期 ${data.target_issue ?? "-"}，AI ${data.ai_status}` +
-          ((data.metrics as Record<string, any>)?.auto_hit?.selected_variant
-            ? `，自动优选 ${(data.metrics as Record<string, any>).auto_hit.selected_variant}`
-            : "")
+        `已生成${lotteryLabel(data.lottery_type)} 5 组候选，目标期 ${data.target_issue ?? "-"}，${aiStatusLabel(data.ai_status)}` +
+          (variant ? `，自动优选 ${variant}` : ""),
       )
       setGenerated(data)
       void queryClient.invalidateQueries({ queryKey: ["recommendations"] })
@@ -82,6 +84,26 @@ export function DashboardPage() {
     onError: (err: unknown) => {
       setMessage(null)
       setError(err instanceof ApiError ? err.message : "生成推荐失败")
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async (runId: string) => {
+      setDeletingId(runId)
+      await apiRequest(`/recommendations/${runId}`, { method: "DELETE" })
+      return runId
+    },
+    onSuccess: (runId) => {
+      setDeletingId(null)
+      setError(null)
+      setMessage("已删除该期推荐")
+      if (generated?.id === runId) setGenerated(null)
+      void queryClient.invalidateQueries({ queryKey: ["recommendations"] })
+    },
+    onError: (err: unknown) => {
+      setDeletingId(null)
+      setMessage(null)
+      setError(err instanceof ApiError ? err.message : "删除失败")
     },
   })
 
@@ -116,17 +138,19 @@ export function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>数据版本</CardDescription>
+            <CardDescription>程序版本</CardDescription>
             <CardTitle className="text-xl">{infoQuery.data?.version ?? "—"}</CardTitle>
           </CardHeader>
           <CardContent className="text-xs text-muted-foreground">
-            commit {infoQuery.data?.git_commit ?? "dev"}
+            构建号 {infoQuery.data?.git_commit ?? "开发版"}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>AI 状态</CardDescription>
-            <CardTitle className="text-xl">{current?.ai_status ?? "未生成"}</CardTitle>
+            <CardTitle className="text-lg leading-snug">
+              {current ? aiStatusLabel(current.ai_status) : "尚未生成"}
+            </CardTitle>
           </CardHeader>
         </Card>
       </div>
@@ -135,28 +159,18 @@ export function DashboardPage() {
         <CardHeader>
           <CardTitle>生成 5 组候选</CardTitle>
           <CardDescription>
-            点击后系统自动按近期历史命中表现优选策略并生成 5 组。AI 仅做 ≤10% 辅助，失败自动降级；不承诺中奖。
+            点击后系统自动按近期历史命中表现优选策略并生成 5 组。AI 仅做不超过 10% 的辅助，失败会自动降级为纯统计；不承诺中奖。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-end gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="seed">Seed（可选）</Label>
-              <Input
-                id="seed"
-                className="w-36"
-                value={seed}
-                onChange={(e) => setSeed(e.target.value)}
-                placeholder="可选"
-              />
-            </div>
             <div className="flex items-center gap-2 pb-2">
               <Checkbox
                 id="enable-ai"
                 checked={enableAi}
                 onCheckedChange={(v) => setEnableAi(Boolean(v))}
               />
-              <Label htmlFor="enable-ai">启用 AI</Label>
+              <Label htmlFor="enable-ai">启用 AI 解释</Label>
             </div>
             <Button
               disabled={createMutation.isPending}
@@ -167,16 +181,41 @@ export function DashboardPage() {
             <Button asChild variant="outline">
               <Link to="/recommendations">推荐记录</Link>
             </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowAdvanced((v) => !v)}
+            >
+              {showAdvanced ? "收起高级选项" : "高级选项"}
+            </Button>
           </div>
+
+          {showAdvanced ? (
+            <div className="rounded-xl border bg-muted/30 p-4 space-y-2 max-w-xl">
+              <Label htmlFor="seed">复现编号（可选，一般不用填）</Label>
+              <Input
+                id="seed"
+                className="w-56"
+                value={seed}
+                onChange={(e) => setSeed(e.target.value)}
+                placeholder="留空即可"
+              />
+              <p className="text-xs text-muted-foreground leading-5">
+                这不是中奖相关设置。系统用它控制“随机过程”的起点：留空时自动生成；
+                填写同一个数字，可以反复得到完全相同的 5 组号码，方便对比测试。日常使用请留空。
+              </p>
+            </div>
+          ) : null}
+
           {message ? (
             <Alert>
-              <AlertTitle>生成成功</AlertTitle>
+              <AlertTitle>操作成功</AlertTitle>
               <AlertDescription>{message}</AlertDescription>
             </Alert>
           ) : null}
           {error ? (
             <Alert variant="destructive">
-              <AlertTitle>生成失败</AlertTitle>
+              <AlertTitle>操作失败</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           ) : null}
@@ -185,9 +224,9 @@ export function DashboardPage() {
 
       <Card>
         <CardHeader>
-                    <CardTitle>候选组合</CardTitle>
+          <CardTitle>候选组合</CardTitle>
           <CardDescription>
-            每一期可折叠展开；支持单注复制，以及一键复制该目标期内全部号码。
+            每一期可折叠展开；支持单注复制、一键复制该期全部号码，也可删除不需要的期次。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -199,9 +238,19 @@ export function DashboardPage() {
               onRetry={() => void recQuery.refetch()}
             />
           ) : null}
-          {!recQuery.isLoading && !recQuery.isError && (generated || (recQuery.data?.items?.length ?? 0) > 0) ? (
+          {!recQuery.isLoading &&
+          !recQuery.isError &&
+          (generated || (recQuery.data?.items?.length ?? 0) > 0) ? (
             <div className="space-y-3">
-              {generated ? <RunPanel key={generated.id} run={generated} defaultOpen /> : null}
+              {generated ? (
+                <RunPanel
+                  key={generated.id}
+                  run={generated}
+                  defaultOpen
+                  onDelete={(id) => deleteMutation.mutate(id)}
+                  deleting={deletingId === generated.id}
+                />
+              ) : null}
               {(recQuery.data?.items ?? [])
                 .filter((run) => !generated || run.id !== generated.id)
                 .map((run, idx) => (
@@ -209,6 +258,8 @@ export function DashboardPage() {
                     key={run.id}
                     run={run}
                     defaultOpen={!generated && idx === 0}
+                    onDelete={(id) => deleteMutation.mutate(id)}
+                    deleting={deletingId === run.id}
                   />
                 ))}
             </div>
@@ -245,7 +296,7 @@ export function DashboardPage() {
             <Link to="/strategies">策略配置</Link>
           </Button>
           <Button asChild variant="secondary">
-            <Link to="/settings">系统/AI 设置</Link>
+            <Link to="/settings">系统设置</Link>
           </Button>
         </CardContent>
       </Card>

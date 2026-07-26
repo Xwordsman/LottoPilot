@@ -1,4 +1,5 @@
 import type { RecommendationRun, RecommendationTicket } from "@/types/recommendations";
+import { aiStatusLabel, lotteryLabel } from "@/lib/labels";
 
 export function formatTicketLine(ticket: RecommendationTicket): string {
   const primary = (ticket.primary_numbers ?? [])
@@ -12,9 +13,9 @@ export function formatTicketLine(ticket: RecommendationTicket): string {
 
 export function formatRunTickets(run: RecommendationRun): string {
   const header = [
-    `${(run.lottery_type || "").toUpperCase()} · 目标期 ${run.target_issue ?? "—"}`,
-    run.seed != null ? `seed ${run.seed}` : null,
-    run.ai_status ? `AI ${run.ai_status}` : null,
+    `${lotteryLabel(run.lottery_type)} · 目标期 ${run.target_issue ?? "—"}`,
+    run.seed != null ? `复现编号 ${run.seed}` : null,
+    run.ai_status ? aiStatusLabel(run.ai_status) : null,
   ]
     .filter(Boolean)
     .join(" · ");
