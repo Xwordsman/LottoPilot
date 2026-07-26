@@ -413,6 +413,28 @@ def main() -> int:
         and "evaluation_status" not in rec_v7
         and "evaluation_status" not in run_panel_v7,
     )
+    rec_api_src = (ROOT / "backend" / "app" / "api" / "v1" / "recommendations.py").read_text(encoding="utf-8")
+    check(
+        "api_recommendation_delete_route",
+        "def delete_recommendation" in rec_api_src
+        and "db.flush()" in rec_api_src
+        and "delete(RecommendationRun)" in rec_api_src,
+    )
+    run_title_src = (ROOT / "frontend" / "src" / "lib" / "run-title.ts").read_text(encoding="utf-8")
+    check(
+        "frontend_run_title_meta",
+        "buildRunTitleMetaMap" in run_title_src
+        and "formatRunTitle" in run_title_src
+        and "generationIndex" in run_title_src,
+    )
+    check(
+        "frontend_run_panel_title_meta",
+        "titleMeta" in run_panel_v7 and "formatRunTitle" in run_panel_v7 and "onDelete" in run_panel_v7,
+    )
+    check(
+        "frontend_rec_delete_mutation",
+        "method: \"DELETE\"" in rec_v7 or 'method: "DELETE"' in rec_v7,
+    )
     check("frontend_rec_loading_error", "LoadingState" in rec_v7 and "ErrorState" in rec_v7)
     dash_v7 = (ROOT / "frontend" / "src" / "features" / "auth" / "DashboardPage.tsx").read_text(encoding="utf-8")
     check("frontend_dashboard_seed", "setSeed" in dash_v7 and "seed" in dash_v7)

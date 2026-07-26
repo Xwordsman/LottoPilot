@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -23,6 +23,7 @@ import { RunPanel } from "@/components/recommendations/run-panel"
 import { apiRequest, ApiError } from "@/lib/api"
 import { useAuthStore } from "@/lib/auth-store"
 import { aiStatusLabel, lotteryLabel } from "@/lib/labels"
+import { buildRunTitleMetaMap } from "@/lib/run-title"
 import type { SystemInfo } from "@/types/api"
 import type { LotteryType } from "@/types/draws"
 import type { RecommendationList, RecommendationRun } from "@/types/recommendations"
@@ -106,6 +107,15 @@ export function DashboardPage() {
       setError(err instanceof ApiError ? err.message : "删除失败")
     },
   })
+
+  const titleSourceRuns = useMemo(() => {
+    const items = recQuery.data?.items ?? []
+    if (generated && !items.some((r) => r.id === generated.id)) {
+      return [generated, ...items]
+    }
+    return items
+  }, [generated, recQuery.data?.items])
+  const titleMetaMap = useMemo(() => buildRunTitleMetaMap(titleSourceRuns), [titleSourceRuns])
 
   const current = generated ?? recQuery.data?.items?.[0] ?? null
   const latestIssue =
@@ -247,6 +257,7 @@ export function DashboardPage() {
                   key={generated.id}
                   run={generated}
                   defaultOpen
+                  titleMeta={titleMetaMap[generated.id]}
                   onDelete={(id) => deleteMutation.mutate(id)}
                   deleting={deletingId === generated.id}
                 />
@@ -258,6 +269,7 @@ export function DashboardPage() {
                     key={run.id}
                     run={run}
                     defaultOpen={!generated && idx === 0}
+                    titleMeta={titleMetaMap[run.id]}
                     onDelete={(id) => deleteMutation.mutate(id)}
                     deleting={deletingId === run.id}
                   />

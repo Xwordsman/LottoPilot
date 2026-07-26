@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/card";
 import { TicketCard } from "@/components/ui/ticket-card";
 import { copyText } from "@/lib/clipboard";
-import { aiStatusLabel, lotteryLabel } from "@/lib/labels";
+import { aiStatusLabel } from "@/lib/labels";
 import { formatRunTickets } from "@/lib/ticket-format";
+import { formatRunTitle, type RunTitleMeta } from "@/lib/run-title";
 import { cn } from "@/lib/utils";
 import type { RecommendationRun } from "@/types/recommendations";
 
@@ -23,6 +24,7 @@ type RunPanelProps = {
   className?: string;
   onDelete?: (runId: string) => void;
   deleting?: boolean;
+  titleMeta?: RunTitleMeta | null;
 };
 
 export function RunPanel({
@@ -32,14 +34,15 @@ export function RunPanel({
   className,
   onDelete,
   deleting = false,
+  titleMeta = null,
 }: RunPanelProps) {
   const [open, setOpen] = useState(defaultOpen);
   const [copiedAll, setCopiedAll] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
 
-  const title = `${lotteryLabel(run.lottery_type)} · 目标期 ${run.target_issue ?? "—"}`;
+  const title = formatRunTitle(run, titleMeta);
   const ticketCount = run.tickets?.length ?? 0;
-  const allText = useMemo(() => formatRunTickets(run), [run]);
+  const allText = useMemo(() => formatRunTickets(run, titleMeta), [run, titleMeta]);
 
   async function copyAll() {
     const ok = await copyText(allText);
@@ -56,11 +59,13 @@ export function RunPanel({
   function handleDelete(e: MouseEvent) {
     e.stopPropagation();
     if (!onDelete) return;
-    const ok = window.confirm(
-      `确认删除「${lotteryLabel(run.lottery_type)} · 目标期 ${run.target_issue ?? "—"}」这期推荐？删除后不可恢复。`,
-    );
+    const ok = window.confirm(`确认删除「${title}」？删除后不可恢复。`);
     if (ok) onDelete(run.id);
   }
+
+  const evalText = run.evaluation
+    ? ` · 复盘命中 ${run.evaluation.best_primary_hits ?? "-"}+${run.evaluation.best_secondary_hits ?? "-"}`
+    : "";
 
   return (
     <Card className={cn("overflow-hidden", className)}>
@@ -78,13 +83,9 @@ export function RunPanel({
             <span className="min-w-0 space-y-1">
               <CardTitle className="text-base sm:text-lg">{title}</CardTitle>
               <CardDescription>
-                复现编号 {run.seed ?? "自动"} · {aiStatusLabel(run.ai_status)}
+                {`复现编号 ${run.seed ?? "自动"} · ${aiStatusLabel(run.ai_status)}`}
                 {ticketCount ? ` · ${ticketCount} 组` : ""}
-                {run.evaluation
-                  ? ` · 复盘命中 ${run.evaluation.best_primary_hits ?? "-"}+${
-                      run.evaluation.best_secondary_hits ?? "-"
-                    }`
-                  : ""}
+                {evalText}
               </CardDescription>
             </span>
           </button>

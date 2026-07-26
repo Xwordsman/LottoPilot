@@ -206,6 +206,13 @@ def test_sqlite_full_flow(sqlite_client: TestClient) -> None:
     exp_csv = client.get(f"/api/v1/recommendations/{rec['id']}/export", params={"fmt": "csv"})
     assert exp_csv.status_code == 200 and exp_csv.content
 
+    deleted = _assert_success(client.delete(f"/api/v1/recommendations/{rec2['id']}"))
+    assert deleted.get("deleted") is True
+    listed = _assert_success(client.get("/api/v1/recommendations", params={"lottery_type": "ssq", "page": 1, "page_size": 20}))
+    listed_ids = {item["id"] for item in listed.get("items", [])}
+    assert rec2["id"] not in listed_ids
+    assert rec["id"] in listed_ids
+
     bt = _assert_success(
         client.post(
             "/api/v1/backtests",

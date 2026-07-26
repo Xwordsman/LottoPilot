@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { RunPanel } from "@/components/recommendations/run-panel";
 import { apiRequest, ApiError } from "@/lib/api";
 import { aiStatusLabel, lotteryLabel } from "@/lib/labels";
+import { buildRunTitleMetaMap } from "@/lib/run-title";
 import type { LotteryType } from "@/types/draws";
 import type { RecommendationList, RecommendationRun } from "@/types/recommendations";
 
@@ -46,6 +47,8 @@ export function RecommendationsPage() {
     }
     return items.map((r) => (freshRun && r.id === freshRun.id ? freshRun : r));
   }, [listQuery.data?.items, freshRun]);
+
+  const titleMetaMap = useMemo(() => buildRunTitleMetaMap(runs), [runs]);
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -232,6 +235,7 @@ export function RecommendationsPage() {
               key={run.id}
               run={run}
               defaultOpen={activeId ? run.id === activeId : idx === 0}
+              titleMeta={titleMetaMap[run.id]}
               onDelete={(id) => deleteMutation.mutate(id)}
               deleting={deletingId === run.id}
               actions={

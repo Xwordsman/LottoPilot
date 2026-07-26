@@ -7,13 +7,13 @@ import math
 
 from fastapi import APIRouter, Query
 from fastapi.responses import Response
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import CurrentUserDep, DbSession, RequestIdDep
 from app.api.response import success_response
 from app.core.errors import NotFoundError
-from app.models.recommendation import RecommendationResult, RecommendationRun
+from app.models.recommendation import RecommendationResult, RecommendationRun, RecommendationTicket
 from app.models.system import Job
 from app.schemas.recommendations import (
     RecommendationCreateRequest,
@@ -180,16 +180,35 @@ def delete_recommendation(
     request_id: RequestIdDep,
 ):
     """Delete one recommendation run and its tickets/results."""
+    _ = user
     run = db.get(RecommendationRun, run_id)
     if run is None:
         raise NotFoundError("推荐记录不存在")
+
     job_id = run.job_id
-    db.delete(run)
+
+    # Explicit ordered cleanup:
+    # results -> tickets -> run -> job
+    # Avoids RESTRICT on jobs.id and any orphan ticket/result rows.
+    ticket_ids = list(
+        db.scalars(select(RecommendationTicket.id).where(RecommendationTicket.run_id == run_id)).all()
+    )
+    if ticket_ids:
+        db.execute(delete(RecommendationResult).where(RecommendationResult.ticket_id.in_(ticket_ids)))
+        db.execute(delete(RecommendationTicket).where(RecommendationTicket.id.in_(ticket_ids)))
+
+    db.execute(delete(RecommendationRun).where(RecommendationRun.id == run_id))
+    db.flush()
+
     job = db.get(Job, job_id)
     if job is not None:
         db.delete(job)
+
     db.commit()
     return success_response({"deleted": True, "id": str(run_id)}, request_id)
+
+
+
 
 
 
